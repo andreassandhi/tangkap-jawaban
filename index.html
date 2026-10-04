@@ -445,7 +445,7 @@ const HAND_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmar
 const INDEX_FINGER_TIP = 8;
 const DWELL_TIME = 1.0;                                    // detik menahan jari untuk memilih
 const FALL_SECONDS = { pelan: 9, sedang: 6.5, cepat: 4.5 }; // waktu jatuh dari atas ke bawah
-const HAND_GRACE_MS = 250;                                 // toleransi tangan hilang sesaat
+const HAND_GRACE_MS = 400;                                // toleransi tangan hilang sesaat
 const LANE_COLORS = ['#ff7eb6', '#4cc9f0', '#ffb020'];
 const KATEGORI_IKON = {
   'Enkoding Substitusi': '🔣',
@@ -618,6 +618,104 @@ function say(text) {
 // ---------------------------------------------------------------------
 // 6. KAMERA + MEDIAPIPE HAND LANDMARKER
 // ---------------------------------------------------------------------
+// --- 6a. Deteksi di Web Worker (utama): animasi tidak tertahan oleh deteksi tangan ---
+// Worker memuat MediaPipe (vision_bundle.js), lalu membandingkan GPU vs CPU dan memakai yang tercepat.
+const WORKER_SRC = `
+let lm = null, delegate = '', fileset = null, HL = null;
+let n = 0, sum = 0, warm = 0, tested = {}, other = null, switching = false;
+const opts = (d, model) => ({ baseOptions: { modelAssetPath: model, delegate: d }, runningMode: 'VIDEO', numHands: 1,
+  minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
+let MODEL = '';
+async function make(d) { try { return await HL.createFromOptions(fileset, opts(d, MODEL)); } catch (e) { return null; } }
+async function benchmark(ms) {
+  if (switching || tested.done) return;
+  if (warm++ < 5) return;                                    // abaikan frame awal (pemanasan)
+  n++; sum += ms;
+  if (n < 20) return;
+  tested[delegate] = sum / n; n = 0; sum = 0;
+  const alt = delegate === 'GPU' ? 'CPU' : 'GPU';
+  if (!(alt in tested) && tested[delegate] > 25) {          // cukup lambat -> coba mode lain
+    switching = true;
+    const inst = await make(alt);
+    if (inst) { other = lm; lm = inst; delegate = alt; warm = 0; }
+    else tested.done = true;
+    switching = false;
+    return;
+  }
+  if (other && (alt in tested)) {                            // keduanya sudah diukur: pakai yang tercepat
+    if (tested[alt] < tested[delegate]) { const t = lm; lm = other; other = t; delegate = alt; }
+    try { other.close(); } catch (e) {}
+    other = null;
+  }
+  tested.done = true;
+}
+self.onmessage = async (e) => {
+  const m = e.data;
+  if (m.type === 'init') {
+    try {
+      importScripts(m.base + '/vision_bundle.js');
+      HL = self.Vision.HandLandmarker; MODEL = m.model;
+      fileset = await self.Vision.FilesetResolver.forVisionTasks(m.base + '/wasm');
+      lm = await make('GPU'); delegate = 'GPU';
+      if (!lm) { lm = await make('CPU'); delegate = 'CPU'; }
+      if (!lm) throw new Error('HandLandmarker gagal dibuat');
+      self.postMessage({ type: 'ready', delegate, connections: HL.HAND_CONNECTIONS });
+    } catch (err) { self.postMessage({ type: 'error', message: String((err && err.message) || err) }); }
+    return;
+  }
+  if (m.type === 'frame') {
+    const t0 = performance.now();
+    let pts = null;
+    try {
+      const res = lm.detectForVideo(m.bitmap, m.ts);
+      if (res && res.landmarks && res.landmarks.length) pts = res.landmarks[0].map(p => ({ x: p.x, y: p.y }));
+    } catch (err) {}
+    try { m.bitmap.close(); } catch (e) {}
+    const ms = performance.now() - t0;
+    self.postMessage({ type: 'result', pts, ms, delegate });
+    benchmark(ms);
+  }
+};`;
+
+let worker = null, workerReady = false, workerBusy = false, detMs = 0, detCount = 0, detRate = 0;
+
+function initWorker() {
+  return new Promise((resolve, reject) => {
+    if (typeof Worker === 'undefined' || typeof createImageBitmap === 'undefined') { reject(new Error('Worker tidak didukung')); return; }
+    let w;
+    try { w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' }))); }
+    catch (e) { reject(e); return; }
+    const timer = setTimeout(() => { w.terminate(); reject(new Error('Worker timeout')); }, 60000);
+    w.onmessage = e => {
+      const m = e.data;
+      if (m.type === 'ready') {
+        clearTimeout(timer); worker = w; workerReady = true; mpDelegate = m.delegate;
+        HAND_CONNECTIONS = m.connections || [];
+        resolve(w);
+      } else if (m.type === 'error') {
+        clearTimeout(timer); w.terminate(); reject(new Error(m.message));
+      } else if (m.type === 'result') {
+        workerBusy = false; mpDelegate = m.delegate;
+        detMs = detMs ? detMs * 0.8 + m.ms * 0.2 : m.ms; detCount++;
+        applyLandmarks(m.pts, performance.now());
+      }
+    };
+    w.onerror = e => { clearTimeout(timer); w.terminate(); worker = null; workerReady = false; reject(new Error(e.message || 'Worker error')); };
+    w.postMessage({ type: 'init', base: MP_BASE, model: HAND_MODEL });
+  });
+}
+
+function applyLandmarks(pts, now) {
+  if (pts) {
+    hand.points = pts.map(toScreen);
+    const tip = hand.points[INDEX_FINGER_TIP];
+    hand.x = tip.x; hand.y = tip.y; hand.visible = true; hand.lastSeen = now;
+  } else {
+    hand.visible = false; hand.points = null;
+  }
+}
+
+// --- 6b. Cadangan: deteksi di thread utama (jika Worker tidak didukung) ---
 async function loadMediaPipe() {
   // Import ES module MediaPipe Tasks Vision dari CDN jsDelivr (versi dipatok agar JS & WASM cocok)
   const { FilesetResolver, HandLandmarker } = await import(`${MP_BASE}/vision_bundle.mjs`);
@@ -636,9 +734,14 @@ async function loadMediaPipe() {
   return handLandmarker;
 }
 function ensureMediaPipe() {
-  if (!mpPromise) mpPromise = loadMediaPipe().catch(err => { mpPromise = null; throw err; });
+  if (!mpPromise) {
+    mpPromise = initWorker()
+      .catch(err => { console.warn('Worker gagal, deteksi di thread utama:', err); return loadMediaPipe(); })
+      .catch(err => { mpPromise = null; throw err; });
+  }
   return mpPromise;
 }
+const trackerReady = () => workerReady || !!handLandmarker;
 
 async function startCamera() {
   if (cameraOn) return;
@@ -663,19 +766,25 @@ function toScreen(p) {
 }
 
 function detectHand(now) {
-  if (!handLandmarker || !cameraOn || video.readyState < 2) return;
-  if (video.currentTime === lastVideoTime) return;
+  if (!cameraOn || video.readyState < 2 || video.currentTime === lastVideoTime) return;
+  if (workerReady) {
+    // kirim 1 frame (diperkecil) ke worker; frame berikutnya dikirim setelah hasilnya kembali
+    if (workerBusy) return;
+    workerBusy = true; lastVideoTime = video.currentTime;
+    const vw = video.videoWidth || 640, vh = video.videoHeight || 480, rw = Math.min(480, vw);
+    createImageBitmap(video, { resizeWidth: rw, resizeHeight: Math.round(rw * vh / vw), resizeQuality: 'low' })
+      .then(bmp => worker.postMessage({ type: 'frame', bitmap: bmp, ts: performance.now() }, [bmp]))
+      .catch(() => { workerBusy = false; });
+    return;
+  }
+  if (!handLandmarker) return;
   if (now - lastDetect < DETECT_INTERVAL_MS) return;     // batasi ±20x/detik agar animasi tetap lancar
   lastVideoTime = video.currentTime; lastDetect = now;
   let res;
   try { res = handLandmarker.detectForVideo(video, now); } catch (e) { console.warn(e); return; }
-  if (res?.landmarks?.length) {
-    hand.points = res.landmarks[0].map(toScreen);
-    const tip = hand.points[INDEX_FINGER_TIP];
-    hand.x = tip.x; hand.y = tip.y; hand.visible = true; hand.lastSeen = now;
-  } else {
-    hand.visible = false; hand.points = null;
-  }
+  const t1 = performance.now();
+  detMs = detMs ? detMs * 0.8 + (t1 - now) * 0.2 : t1 - now; detCount++;
+  applyLandmarks(res?.landmarks?.[0] || null, now);
 }
 
 function updateCursor(now, dt) {
@@ -714,7 +823,7 @@ window.addEventListener('resize', resize);
 function sizeBoxes() {
   const playW = Math.min(W, 1100);
   const avail = Math.max(110, H - L.panelBottom - L.hudH);
-  L.boxW = clamp(Math.min(playW * 0.24, avail * 0.42), 76, 210);
+  L.boxW = clamp(Math.min(playW * 0.2, avail * 0.34), 62, 180);
   L.boxH = L.boxW * 0.7;
   L.canopy = L.boxW * 0.38;                      // tinggi tali parasut di atas kotak
   L.laneX = [0, 1, 2].map(i => W / 2 + (i - 1) * playW / 3);
@@ -724,18 +833,18 @@ function sizeBoxes() {
 
 function layoutQuestion(q) {
   const u = L.u;
-  const panelW = Math.min(W - 24, 900);
-  const pad = clamp(u * 0.016, 8, 16);
+  const panelW = Math.min(W * 0.78, 760);
+  const pad = clamp(u * 0.013, 6, 14);
   const innerW = panelW - pad * 2;
-  const labelH = clamp(u * 0.022, 14, 22);
-  const maxPanelH = clamp(H * 0.3, 90, 250);
-  const soalFit = fitText(q.soal || '', innerW, clamp(H * 0.09, 26, 80), clamp(u * 0.036, 16, 34), 12, 2, 700);
+  const labelH = clamp(u * 0.019, 12, 20);
+  const maxPanelH = clamp(H * 0.25, 76, 210);
+  const soalFit = fitText(q.soal || '', innerW, clamp(H * 0.075, 22, 64), clamp(u * 0.03, 14, 28), 11, 2, 700);
   const soalH = soalFit.lines.length * soalFit.size * 1.15;
   const gLines = String(q.gambar || '').split('|').map(s => s.trim()).filter(Boolean);
   let gSize = 0;
   if (gLines.length) {
     const room = maxPanelH - pad * 2 - labelH - soalH - 4;
-    gSize = Math.min(clamp(u * 0.052, 20, 52), room / (gLines.length * 1.2));
+    gSize = Math.min(clamp(u * 0.045, 18, 44), room / (gLines.length * 1.2));
     ctx.font = font(gSize, 500);
     for (const ln of gLines) { const w = ctx.measureText(ln).width; if (w > innerW) gSize = Math.min(gSize, gSize * innerW / w); }
     gSize = Math.max(14, gSize);
@@ -904,7 +1013,7 @@ function draw(now) {
   if (feedback) drawFeedbackBanner(t);
   drawHand();
   drawCursor();
-  if (state === 'playing' && cameraOn && handLandmarker && now - noHandSince > 1800) drawHint(t);
+  if (state === 'playing' && cameraOn && trackerReady() && now - noHandSince > 1800) drawHint(t);
 }
 
 function drawPanel() {
@@ -1041,7 +1150,7 @@ function drawFeedbackBanner(t) {
   ctx.save();
   ctx.translate(W / 2, y); ctx.scale(s, s);
   const txt = feedback.benar ? `⭐ ${feedback.text} ⭐` : feedback.text;
-  const size = clamp(L.u * 0.065, 26, 68);
+  const size = clamp(L.u * 0.055, 22, 60);
   ctx.font = font(size, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round'; ctx.lineWidth = size * 0.22; ctx.strokeStyle = '#ffffff'; ctx.strokeText(txt, 0, 0, W * 0.9);
   ctx.fillStyle = feedback.benar ? '#16a34a' : '#f97316'; ctx.fillText(txt, 0, 0, W * 0.9);
@@ -1089,11 +1198,11 @@ function drawCursor() {
 
 function drawHint(t) {
   const txt = '✋ Angkat tanganmu ke depan kamera!';
-  const size = clamp(L.u * 0.03, 15, 28);
+  const size = clamp(L.u * 0.024, 12, 22);
   ctx.save();
   ctx.font = font(size, 700);
   const w = ctx.measureText(txt).width + 40, h = size * 2;
-  const x = W / 2, y = H - h - 60 + Math.sin(t * 4) * 4;
+  const x = W / 2, y = H - h - L.hudH + Math.sin(t * 3) * 3;
   roundRect(x - w / 2, y, w, h, h / 2);
   ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
   ctx.lineWidth = 4; ctx.strokeStyle = '#ff6fae'; ctx.stroke();
@@ -1110,8 +1219,12 @@ function loop(now) {
   lastFrame = now;
   fpsFrames++; fpsTime += dt;
   if (fpsTime >= 1) {
-    fps = Math.round(fpsFrames / fpsTime); fpsFrames = 0; fpsTime = 0;
-    if (state === 'playing' || state === 'feedback') $('#hudPerf').textContent = `${handLandmarker && cameraOn ? '✋ ' + mpDelegate : '🖱️'} · ${fps} fps`;
+    fps = Math.round(fpsFrames / fpsTime); detRate = Math.round(detCount / fpsTime); fpsFrames = 0; fpsTime = 0; detCount = 0;
+    if (state === 'playing' || state === 'feedback') {
+      $('#hudPerf').textContent = trackerReady() && cameraOn
+        ? `✋ ${mpDelegate}${workerReady ? '·W' : ''} · ${fps} fps · tangan ${detRate}/dtk`
+        : `🖱️ · ${fps} fps`;
+    }
   }
   if (state === 'playing' || state === 'feedback') {
     detectHand(now);
