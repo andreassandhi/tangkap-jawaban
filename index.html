@@ -93,6 +93,9 @@
   .chips button:not(.on) { opacity: .55; }
   .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
   .toggle.on { background: #dcfce7; border-color: var(--green); }
+  .voice { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .voice select { flex: 1 1 220px; min-width: 0; font-family: inherit; font-size: 14px; border-radius: 12px; border: 3px solid #e3d8fa; padding: 7px 8px; color: var(--ink); background: #fff; }
+  .voice-warn { margin: 2px 0 0; font-size: 13px; line-height: 1.45; background: #fff4e5; border: 2px solid #ffd8a8; border-radius: 14px; padding: 8px 12px; }
 
   .bank {
     margin-top: 4px; padding: 12px 14px; border-radius: 20px;
@@ -233,6 +236,16 @@
           <button class="toggle" id="tglAcak">🔀 Soal diacak</button>
           <button class="toggle" id="tglSuara">🔊 Suara &amp; dibacakan</button>
         </div>
+      </div>
+      <div class="row">
+        <span class="lbl">Suara pembaca (Bahasa Indonesia)</span>
+        <div class="voice">
+          <select id="voiceSelect"></select>
+          <button class="btn-sm" id="btnTestVoice">▶ Tes suara</button>
+        </div>
+        <p class="voice-warn" id="voiceWarn" hidden>⚠️ Suara Bahasa Indonesia belum terpasang di perangkat ini, jadi soal bisa terbaca dengan logat Inggris.<br>
+          <b>Android:</b> Setelan → Manajemen umum → Bahasa → Output teks-ke-ucapan → Mesin Google → ⚙️ → Instal data suara → <b>Bahasa Indonesia</b>, lalu buka ulang game.<br>
+          <b>Windows:</b> Settings → Time &amp; language → Speech → Add voices → <b>Indonesian</b>.</p>
       </div>
       <div class="row">
         <span class="lbl">Bank soal (untuk orang tua / guru)</span>
@@ -566,17 +579,37 @@ const sfx = {
   wrong: () => tone(340, 0.35, { type: 'triangle', slide: 0.65, vol: 0.12 }),
   finish: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, { at: i * 0.13 })),
 };
+// Android kadang memakai kode lama "in-ID" untuk Bahasa Indonesia
+const isIndo = v => /^(id|in)([-_]|$)/i.test(v.lang) || /indonesia/i.test(v.name);
 function pickVoice() {
   const vs = speechSynthesis.getVoices();
-  idVoice = vs.find(v => /^id[-_]ID/i.test(v.lang)) || vs.find(v => /^id/i.test(v.lang)) || null;
+  const indo = vs.filter(isIndo);
+  const saved = settings.voice && indo.find(v => v.voiceURI === settings.voice);
+  idVoice = saved || indo.find(v => /google/i.test(v.name)) || indo.find(v => v.localService) || indo[0] || null;
+  renderVoiceSelect(indo, vs.length);
 }
-if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function renderVoiceSelect(indo, total) {
+  const sel = $('#voiceSelect'), warn = $('#voiceWarn');
+  if (!sel) return;
+  sel.innerHTML = indo.length
+    ? indo.map(v => `<option value="${escapeHtml(v.voiceURI)}" ${v === idVoice ? 'selected' : ''}>${escapeHtml(v.name)} (${escapeHtml(v.lang)})</option>`).join('')
+    : '<option value="">Suara Indonesia bawaan perangkat</option>';
+  sel.disabled = !indo.length;
+  warn.hidden = indo.length > 0 || total === 0;
+}
+if ('speechSynthesis' in window) {
+  pickVoice();
+  speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
+  setTimeout(pickVoice, 1000); setTimeout(pickVoice, 3000);   // daftar suara Android sering terlambat dimuat
+}
 function say(text) {
   if (!settings.suara || !text || !('speechSynthesis' in window)) return;
   try {
+    if (!idVoice) pickVoice();
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'id-ID'; if (idVoice) u.voice = idVoice;
+    u.lang = idVoice ? idVoice.lang : 'id-ID';
+    if (idVoice) u.voice = idVoice;
     u.rate = 0.92; u.pitch = 1.15;
     setTimeout(() => speechSynthesis.speak(u), 60);   // jeda kecil: cancel→speak di Chrome kadang terlewat
   } catch {}
@@ -1226,6 +1259,13 @@ $('#chipsKategori').addEventListener('click', e => {
 });
 $('#tglAcak').addEventListener('click', () => { settings.acak = !settings.acak; renderMenu(); });
 $('#tglSuara').addEventListener('click', () => { settings.suara = !settings.suara; if (!settings.suara && 'speechSynthesis' in window) speechSynthesis.cancel(); renderMenu(); });
+$('#voiceSelect').addEventListener('change', e => { settings.voice = e.target.value; pickVoice(); saveSettings(); });
+$('#btnTestVoice').addEventListener('click', () => {
+  if (!('speechSynthesis' in window)) { toast('Browser ini tidak mendukung suara pembaca 😢'); return; }
+  const was = settings.suara; settings.suara = true;
+  say('Halo! Ayo kita bermain tangkap jawaban. Ada berapa kucing?');
+  settings.suara = was;
+});
 $('#fileImport').addEventListener('change', e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ''; });
 $('#btnReset').addEventListener('click', () => {
   if (!confirm('Hapus soal hasil import dan kembali ke 100 soal bawaan?')) return;
