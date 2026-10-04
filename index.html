@@ -139,6 +139,7 @@
     background: rgba(255, 255, 255, .9); border: 3px solid var(--yellow); border-radius: 999px; padding: 6px 14px;
   }
   button.pill { cursor: pointer; }
+  .pill.perf { font-size: 13px; font-weight: 600; border-width: 2px; color: var(--ink-soft); align-self: center; }
   button.pill:hover { background: #fff; }
 
   /* ---------- Hasil ---------- */
@@ -266,6 +267,7 @@
   <div class="group">
     <span class="pill" id="hudProgress">Soal 1/10</span>
     <span class="pill" id="hudScore">⭐ 0</span>
+    <span class="pill perf" id="hudPerf" title="Mode deteksi tangan & kelancaran (frame per detik)">…</span>
   </div>
   <div class="group">
     <button class="pill" id="btnRepeat" title="Bacakan soal lagi">🔊 Ulangi</button>
@@ -424,7 +426,7 @@ const MP_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSI
 const HAND_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const INDEX_FINGER_TIP = 8;
 const DWELL_TIME = 1.0;                                    // detik menahan jari untuk memilih
-const FALL_SECONDS = { pelan: 16, sedang: 11, cepat: 7 };  // waktu jatuh dari atas ke bawah
+const FALL_SECONDS = { pelan: 9, sedang: 6.5, cepat: 4.5 }; // waktu jatuh dari atas ke bawah
 const HAND_GRACE_MS = 250;                                 // toleransi tangan hilang sesaat
 const LANE_COLORS = ['#ff7eb6', '#4cc9f0', '#ffb020'];
 const KATEGORI_IKON = {
@@ -465,7 +467,8 @@ let W = 0, H = 0, DPR = 1;
 const L = {};                  // layout cache
 let qLayout = null;            // layout teks soal aktif
 
-let handLandmarker = null, mpPromise = null, HAND_CONNECTIONS = [];
+let handLandmarker = null, mpPromise = null, HAND_CONNECTIONS = [], mpDelegate = '';
+let fps = 0, fpsFrames = 0, fpsTime = 0;
 let cameraOn = false, lastVideoTime = -1;
 const hand = { visible: false, x: 0, y: 0, lastSeen: 0, points: null };
 const pointer = { x: 0, y: 0, active: false };
@@ -589,8 +592,8 @@ async function loadMediaPipe() {
     minHandPresenceConfidence: 0.5,
     minTrackingConfidence: 0.5,
   });
-  try { handLandmarker = await HandLandmarker.createFromOptions(fileset, options('GPU')); }
-  catch (e) { console.warn('GPU tidak tersedia, pakai CPU', e); handLandmarker = await HandLandmarker.createFromOptions(fileset, options('CPU')); }
+  try { handLandmarker = await HandLandmarker.createFromOptions(fileset, options('GPU')); mpDelegate = 'GPU'; }
+  catch (e) { console.warn('GPU tidak tersedia, pakai CPU', e); handLandmarker = await HandLandmarker.createFromOptions(fileset, options('CPU')); mpDelegate = 'CPU'; }
   return handLandmarker;
 }
 function ensureMediaPipe() {
@@ -1052,8 +1055,13 @@ function drawHint(t) {
 // 11. GAME LOOP
 // ---------------------------------------------------------------------
 function loop(now) {
-  const dt = Math.min(0.05, (now - lastFrame) / 1000);
+  const dt = Math.min(0.12, (now - lastFrame) / 1000);   // batas besar agar FPS rendah tidak memperlambat jatuh
   lastFrame = now;
+  fpsFrames++; fpsTime += dt;
+  if (fpsTime >= 1) {
+    fps = Math.round(fpsFrames / fpsTime); fpsFrames = 0; fpsTime = 0;
+    if (state === 'playing' || state === 'feedback') $('#hudPerf').textContent = `${handLandmarker && cameraOn ? '✋ ' + mpDelegate : '🖱️'} · ${fps} fps`;
+  }
   if (state === 'playing' || state === 'feedback') {
     detectHand(now);
     updateCursor(now, dt);
