@@ -177,6 +177,11 @@
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
 
+  @media (max-height: 500px) {
+    #hud { padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+    .pill { font-size: 13px; padding: 3px 10px; border-width: 2px; }
+    .pill.perf { font-size: 11px; }
+  }
   @media (max-width: 520px) {
     .card { border-radius: 24px; border-width: 5px; }
     .how div { font-size: 13px; }
@@ -468,7 +473,8 @@ const L = {};                  // layout cache
 let qLayout = null;            // layout teks soal aktif
 
 let handLandmarker = null, mpPromise = null, HAND_CONNECTIONS = [], mpDelegate = '';
-let fps = 0, fpsFrames = 0, fpsTime = 0;
+let fps = 0, fpsFrames = 0, fpsTime = 0, lastDetect = 0;
+const DETECT_INTERVAL_MS = 45;
 let cameraOn = false, lastVideoTime = -1;
 const hand = { visible: false, x: 0, y: 0, lastSeen: 0, points: null };
 const pointer = { x: 0, y: 0, active: false };
@@ -605,7 +611,8 @@ async function startCamera() {
   if (cameraOn) return;
   if (!navigator.mediaDevices?.getUserMedia) throw new Error('Browser tidak mendukung kamera');
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
+    // resolusi kecil sudah cukup untuk deteksi tangan dan jauh lebih ringan di HP / TV
+    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, max: 30 } }, audio: false,
   });
   video.srcObject = stream;
   await new Promise(res => { if (video.readyState >= 1) res(); else video.onloadedmetadata = () => res(); });
@@ -625,7 +632,8 @@ function toScreen(p) {
 function detectHand(now) {
   if (!handLandmarker || !cameraOn || video.readyState < 2) return;
   if (video.currentTime === lastVideoTime) return;
-  lastVideoTime = video.currentTime;
+  if (now - lastDetect < DETECT_INTERVAL_MS) return;     // batasi ±20x/detik agar animasi tetap lancar
+  lastVideoTime = video.currentTime; lastDetect = now;
   let res;
   try { res = handLandmarker.detectForVideo(video, now); } catch (e) { console.warn(e); return; }
   if (res?.landmarks?.length) {
@@ -658,42 +666,52 @@ document.documentElement.addEventListener('mouseleave', () => { pointer.active =
 // 7. LAYOUT
 // ---------------------------------------------------------------------
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  DPR = Math.min(window.devicePixelRatio || 1, 1.5);   // dibatasi agar ringan di HP / TV
   W = window.innerWidth; H = window.innerHeight;
   canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  const playW = Math.min(W, 1100);
-  L.boxW = clamp(Math.min(playW * 0.27, H * 0.3), 92, 230);
-  L.boxH = L.boxW * 0.74;
-  L.canopy = L.boxW * 0.5;                       // tinggi parasut di atas kotak
-  L.laneX = [0, 1, 2].map(i => W / 2 + (i - 1) * playW / 3);
-  L.spawnY = -L.boxH - L.canopy - 10;            // mulai dari atas layar
-  L.fallSpeed = (H - L.spawnY) / FALL_SECONDS[settings.kecepatan];
+  L.u = Math.min(W, H * 1.6);                    // satuan ukuran: layar landscape pendek ikut mengecil
+  L.hudH = 52;
   if (session[qIndex] && (state === 'playing' || state === 'feedback')) layoutQuestion(session[qIndex]);
+  else { L.panelBottom = L.panelBottom || H * 0.28; sizeBoxes(); }
 }
 window.addEventListener('resize', resize);
 
+// Ukuran kotak jawaban menyesuaikan ruang kosong di bawah papan soal
+function sizeBoxes() {
+  const playW = Math.min(W, 1100);
+  const avail = Math.max(110, H - L.panelBottom - L.hudH);
+  L.boxW = clamp(Math.min(playW * 0.24, avail * 0.42), 76, 210);
+  L.boxH = L.boxW * 0.7;
+  L.canopy = L.boxW * 0.38;                      // tinggi tali parasut di atas kotak
+  L.laneX = [0, 1, 2].map(i => W / 2 + (i - 1) * playW / 3);
+  L.spawnY = -L.boxH - L.canopy - L.boxW * 0.25 - 10;   // mulai dari atas layar
+  L.fallSpeed = (H - L.spawnY) / FALL_SECONDS[settings.kecepatan];
+}
+
 function layoutQuestion(q) {
-  const panelW = Math.min(W - 24, 920);
-  const pad = clamp(W * 0.02, 10, 18);
+  const u = L.u;
+  const panelW = Math.min(W - 24, 900);
+  const pad = clamp(u * 0.016, 8, 16);
   const innerW = panelW - pad * 2;
-  const labelH = 26;
-  const maxPanelH = clamp(H * 0.36, 150, 330);
-  const soalFit = fitText(q.soal || '', innerW, clamp(H * 0.12, 44, 96), clamp(W * 0.045, 22, 40), 14, 2, 700);
+  const labelH = clamp(u * 0.022, 14, 22);
+  const maxPanelH = clamp(H * 0.3, 90, 250);
+  const soalFit = fitText(q.soal || '', innerW, clamp(H * 0.09, 26, 80), clamp(u * 0.036, 16, 34), 12, 2, 700);
   const soalH = soalFit.lines.length * soalFit.size * 1.15;
   const gLines = String(q.gambar || '').split('|').map(s => s.trim()).filter(Boolean);
   let gSize = 0;
   if (gLines.length) {
-    const room = maxPanelH - pad * 2 - labelH - soalH - 8;
-    gSize = Math.min(clamp(W * 0.075, 30, 68), room / (gLines.length * 1.25));
+    const room = maxPanelH - pad * 2 - labelH - soalH - 4;
+    gSize = Math.min(clamp(u * 0.052, 20, 52), room / (gLines.length * 1.2));
     ctx.font = font(gSize, 500);
     for (const ln of gLines) { const w = ctx.measureText(ln).width; if (w > innerW) gSize = Math.min(gSize, gSize * innerW / w); }
-    gSize = Math.max(16, gSize);
+    gSize = Math.max(14, gSize);
   }
-  const gH = gLines.length ? gLines.length * gSize * 1.25 + 8 : 0;
+  const gH = gLines.length ? gLines.length * gSize * 1.2 + 4 : 0;
   const panelH = pad + labelH + soalH + gH + pad;
-  qLayout = { panelX: (W - panelW) / 2, panelY: 10, panelW, panelH, pad, labelH, innerW, soalFit, soalH, gLines, gSize };
+  qLayout = { panelX: (W - panelW) / 2, panelY: 8, panelW, panelH, pad, labelH, innerW, soalFit, soalH, gLines, gSize };
   L.panelBottom = qLayout.panelY + panelH;
+  sizeBoxes();
 }
 
 // ---------------------------------------------------------------------
@@ -832,7 +850,7 @@ function burst(x, y, n) {
     const a = Math.random() * Math.PI * 2, sp = 180 + Math.random() * 360;
     particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 220, life: 1.3 + Math.random() * 0.6, age: 0,
       icon: Math.random() < 0.55 ? pick(icons) : null, color: pick(['#ff6fae', '#ffd23f', '#4cc9f0', '#8b5cf6', '#22c55e']),
-      size: 16 + Math.random() * 18, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8 });
+      size: (16 + Math.random() * 18) * clamp(L.u / 900, 0.6, 1), rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8 });
   }
 }
 function updateParticles(dt) {
@@ -859,31 +877,33 @@ function draw(now) {
 function drawPanel() {
   const P = qLayout, q = session[qIndex];
   ctx.save();
-  ctx.shadowColor = 'rgba(59,42,90,.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
-  roundRect(P.panelX, P.panelY, P.panelW, P.panelH, 26);
+  const r = clamp(P.panelH * 0.18, 14, 24);
+  roundRect(P.panelX, P.panelY + 5, P.panelW, P.panelH, r);       // bayangan solid (lebih ringan dari shadowBlur)
+  ctx.fillStyle = 'rgba(59,42,90,.18)'; ctx.fill();
+  roundRect(P.panelX, P.panelY, P.panelW, P.panelH, r);
   ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
-  ctx.shadowColor = 'transparent';
-  ctx.lineWidth = 5; ctx.strokeStyle = '#ffd23f'; ctx.stroke();
+  ctx.lineWidth = 4; ctx.strokeStyle = '#ffd23f'; ctx.stroke();
 
   // label kategori
   const label = `${ikon(q.kategori)} ${q.kategori || 'Umum'}`;
-  ctx.font = font(14, 600);
-  const lw = ctx.measureText(label).width + 22;
-  roundRect(P.panelX + P.pad, P.panelY + P.pad - 4, lw, 24, 12);
+  const lh = P.labelH;
+  ctx.font = font(lh * 0.6, 600);
+  const lw = ctx.measureText(label).width + lh;
+  roundRect(P.panelX + P.pad, P.panelY + P.pad * 0.6, lw, lh, lh / 2);
   ctx.fillStyle = '#f3eefc'; ctx.fill();
   ctx.fillStyle = '#6b5a8a'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(label, P.panelX + P.pad + 11, P.panelY + P.pad + 8);
+  ctx.fillText(label, P.panelX + P.pad + lh / 2, P.panelY + P.pad * 0.6 + lh / 2 + 1);
 
   // teks soal
   const cx = W / 2;
   let y = P.panelY + P.pad + P.labelH + P.soalH / 2;
   drawLines(P.soalFit, cx, y, P.innerW, '#3b2a5a');
-  y += P.soalH / 2 + 8;
+  y += P.soalH / 2 + 4;
 
   // baris gambar/emoji
   if (P.gLines.length) {
     ctx.font = font(P.gSize, 500); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#3b2a5a';
-    P.gLines.forEach((ln, i) => ctx.fillText(ln, cx, y + P.gSize * 1.25 * (i + 0.5), P.innerW));
+    P.gLines.forEach((ln, i) => ctx.fillText(ln, cx, y + P.gSize * 1.2 * (i + 0.5), P.innerW));
   }
   ctx.restore();
 }
@@ -907,7 +927,7 @@ function drawBox(b, t) {
   ctx.scale(scale, scale);
 
   // --- parasut ---
-  const top = -h / 2, canopyY = top - L.canopy * 0.42, R = w * 0.5;
+  const top = -h / 2, canopyY = top - L.canopy * 0.42, R = w * 0.42;
   ctx.strokeStyle = 'rgba(59,42,90,.5)'; ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-R * 0.92, canopyY); ctx.lineTo(-w * 0.36, top + 4);
@@ -915,7 +935,7 @@ function drawBox(b, t) {
   ctx.moveTo(0, canopyY); ctx.lineTo(0, top + 2);
   ctx.stroke();
   ctx.save();
-  ctx.translate(0, canopyY); ctx.scale(1, 0.62);
+  ctx.translate(0, canopyY); ctx.scale(1, 0.55);
   const parts = 6;
   for (let i = 0; i < parts; i++) {
     ctx.beginPath(); ctx.moveTo(0, 0);
@@ -927,17 +947,16 @@ function drawBox(b, t) {
   ctx.restore();
 
   // --- kotak ---
-  ctx.shadowColor = b.hover ? 'rgba(255,214,0,.9)' : 'rgba(59,42,90,.3)';
-  ctx.shadowBlur = b.hover ? 28 : 12; ctx.shadowOffsetY = b.hover ? 0 : 6;
-  roundRect(-w / 2, -h / 2, w, h, 22);
+  const rr = w * 0.14, inset = clamp(w * 0.055, 5, 9);
+  if (!b.hover) { roundRect(-w / 2, -h / 2 + 5, w, h, rr); ctx.fillStyle = 'rgba(59,42,90,.25)'; ctx.fill(); }  // bayangan solid
+  roundRect(-w / 2, -h / 2, w, h, rr);
   ctx.fillStyle = color; ctx.fill();
-  ctx.shadowColor = 'transparent';
-  if (b.hoverAnim > 0.05) { ctx.lineWidth = 6; ctx.strokeStyle = `rgba(255,230,0,${b.hoverAnim})`; ctx.stroke(); }
-  if (fb && b === fb.correct) { ctx.lineWidth = 8; ctx.strokeStyle = '#22c55e'; ctx.stroke(); }
+  if (b.hoverAnim > 0.05) { ctx.lineWidth = 7; ctx.strokeStyle = `rgba(255,230,0,${b.hoverAnim})`; ctx.stroke(); }
+  if (fb && b === fb.correct) { ctx.lineWidth = 7; ctx.strokeStyle = '#22c55e'; ctx.stroke(); }
 
   // bagian dalam putih + isian "air" sebagai loading
-  const ix = -w / 2 + 8, iy = -h / 2 + 8, iw = w - 16, ih = h - 16;
-  roundRect(ix, iy, iw, ih, 15);
+  const ix = -w / 2 + inset, iy = -h / 2 + inset, iw = w - inset * 2, ih = h - inset * 2;
+  roundRect(ix, iy, iw, ih, rr * 0.7);
   ctx.fillStyle = '#ffffff'; ctx.fill();
   if (p > 0) {
     ctx.save(); ctx.clip();
@@ -951,11 +970,11 @@ function drawBox(b, t) {
   }
 
   // isi jawaban
-  if (!b.fit || b.fitW !== w) { b.fit = fitText(b.text, iw - 14, ih - 12, h * 0.5, 12, 2, 700); b.fitW = w; }
-  drawLines(b.fit, 0, 2, iw - 14, '#3b2a5a');
+  if (!b.fit || b.fitW !== w) { b.fit = fitText(b.text, iw - 12, ih - 10, h * 0.48, 11, 2, 700); b.fitW = w; }
+  drawLines(b.fit, 0, 2, iw - 12, '#3b2a5a');
 
   // lencana huruf A/B/C
-  const br = clamp(w * 0.11, 12, 20);
+  const br = clamp(w * 0.1, 10, 18);
   ctx.beginPath(); ctx.arc(-w / 2 + br * 0.6, -h / 2 + br * 0.6, br, 0, Math.PI * 2);
   ctx.fillStyle = '#3b2a5a'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
   ctx.fillStyle = '#fff'; ctx.font = font(br * 1.2, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -963,7 +982,7 @@ function drawBox(b, t) {
 
   // tanda benar / salah
   if (fb && (b === fb.chosen || b === fb.correct)) {
-    const ok = b === fb.correct, mr = clamp(w * 0.15, 16, 28);
+    const ok = b === fb.correct, mr = clamp(w * 0.14, 12, 26);
     ctx.beginPath(); ctx.arc(w / 2 - mr * 0.4, -h / 2 + mr * 0.4, mr, 0, Math.PI * 2);
     ctx.fillStyle = ok ? '#22c55e' : '#ef4444'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.font = font(mr * 1.2, 700);
@@ -989,7 +1008,7 @@ function drawFeedbackBanner(t) {
   ctx.save();
   ctx.translate(W / 2, y); ctx.scale(s, s);
   const txt = feedback.benar ? `⭐ ${feedback.text} ⭐` : feedback.text;
-  const size = clamp(W * 0.08, 34, 76);
+  const size = clamp(L.u * 0.065, 26, 68);
   ctx.font = font(size, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round'; ctx.lineWidth = size * 0.22; ctx.strokeStyle = '#ffffff'; ctx.strokeText(txt, 0, 0, W * 0.9);
   ctx.fillStyle = feedback.benar ? '#16a34a' : '#f97316'; ctx.fillText(txt, 0, 0, W * 0.9);
@@ -1016,29 +1035,28 @@ function drawCursor() {
   const hovered = boxes.find(b => b.hover);
   const p = hovered ? clamp(hovered.dwell / DWELL_TIME, 0, 1) : 0;
   const { x, y } = cursor;
+  const ring = clamp(L.boxW * 0.28, 20, 32), dot = ring * 0.45;
   ctx.save();
   // cincin progres 1 detik
-  ctx.lineWidth = 9; ctx.lineCap = 'round';
+  ctx.lineWidth = ring * 0.25; ctx.lineCap = 'round';
   ctx.strokeStyle = 'rgba(255,255,255,.7)';
-  ctx.beginPath(); ctx.arc(x, y, 34, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, ring, 0, Math.PI * 2); ctx.stroke();
   if (p > 0) {
     ctx.strokeStyle = '#22c55e';
-    ctx.beginPath(); ctx.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, ring, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); ctx.stroke();
   }
   // titik ujung jari
-  ctx.shadowColor = 'rgba(255,111,174,.9)'; ctx.shadowBlur = 18;
-  ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2);
+  ctx.beginPath(); ctx.arc(x, y, dot * 1.5, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,111,174,.35)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y, dot, 0, Math.PI * 2);
   ctx.fillStyle = '#ff6fae'; ctx.fill();
-  ctx.shadowColor = 'transparent';
-  ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
-  ctx.font = font(16, 500); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('✨', x + 1, y + 1);
+  ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
   ctx.restore();
 }
 
 function drawHint(t) {
   const txt = '✋ Angkat tanganmu ke depan kamera!';
-  const size = clamp(W * 0.035, 18, 30);
+  const size = clamp(L.u * 0.03, 15, 28);
   ctx.save();
   ctx.font = font(size, 700);
   const w = ctx.measureText(txt).width + 40, h = size * 2;
