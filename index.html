@@ -215,6 +215,12 @@
 
     <div class="settings">
       <div class="row">
+        <span class="lbl">Usia anak</span>
+        <div class="seg" id="segUsia">
+          <button data-v="3">🧸 3 tahun</button><button data-v="4">🎒 4 tahun</button><button data-v="semua">Semua</button>
+        </div>
+      </div>
+      <div class="row">
         <span class="lbl">Jumlah soal sekali main</span>
         <div class="seg" id="segJumlah">
           <button data-v="5">5</button><button data-v="10">10</button><button data-v="20">20</button><button data-v="semua">Semua</button>
@@ -333,106 +339,206 @@
 // ---------------------------------------------------------------------
 // <SOAL_BAWAAN>
 const SOAL_BAWAAN = [
-  {no: 1, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bebek jadi apa?", gambar: "🍓➡️❤️   🦆➡️🟣 | 🦆➡️❓", pilihan: {A: "🟣", B: "❤️", C: "🟩"}, kunci: "A"},
-  {no: 2, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk lingkaran. Mana lingkaran merah?", gambar: "🍎 ➕ ⚪ ➡️ ❓", pilihan: {A: "❤️", B: "🟠", C: "🔴"}, kunci: "C"},
-  {no: 3, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa pisang?", gambar: "🍌 🍌 🍌", pilihan: {A: "5", B: "3", C: "2"}, kunci: "B"},
-  {no: 4, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka tiga itu gambar apa?", gambar: "1️⃣🐔   2️⃣🐸   3️⃣🐰 | 3️⃣➡️❓", pilihan: {A: "🐰", B: "🐸", C: "🐔"}, kunci: "A"},
-  {no: 5, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍓🍇🍓🍇🍓🍇❓", pilihan: {A: "🍓", B: "🍎", C: "🍇"}, kunci: "A"},
-  {no: 6, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kupu-kupu jadi apa?", gambar: "🦋➡️🔺   ⚽➡️⭐ | 🦋➡️❓", pilihan: {A: "🟩", B: "⭐", C: "🔺"}, kunci: "C"},
-  {no: 7, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk lingkaran. Mana lingkaran oranye?", gambar: "🍊 ➕ ⚪ ➡️ ❓", pilihan: {A: "🧡", B: "🔴", C: "🟠"}, kunci: "C"},
-  {no: 8, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa stroberi?", gambar: "🍓", pilihan: {A: "1", B: "2", C: "3"}, kunci: "A"},
-  {no: 9, kategori: "Substitusi Kode", soal: "Lihat kodenya! Katak itu angka berapa?", gambar: "1️⃣🐶   2️⃣🐸   3️⃣🦋 | 🐸➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "A"},
-  {no: 10, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️🌙❤️🌙❤️❓", pilihan: {A: "🌙", B: "☀️", C: "❤️"}, kunci: "A"},
-  {no: 11, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bola jadi apa?", gambar: "🍓➡️⭐   ⚽➡️☀️ | ⚽➡️❓", pilihan: {A: "☀️", B: "⭐", C: "🌙"}, kunci: "A"},
-  {no: 12, kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk hati. Mana hati biru?", gambar: "🐳 ➕ 🤍 ➡️ ❓", pilihan: {A: "🧡", B: "🔵", C: "💙"}, kunci: "C"},
-  {no: 13, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kelinci?", gambar: "🐰 🐰 🐰", pilihan: {A: "3", B: "4", C: "1"}, kunci: "A"},
-  {no: 14, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka satu itu gambar apa?", gambar: "1️⃣🍦   2️⃣🌸   3️⃣🐘 | 1️⃣➡️❓", pilihan: {A: "🐘", B: "🌸", C: "🍦"}, kunci: "C"},
-  {no: 15, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️🌙❤️🌙❤️❓", pilihan: {A: "☀️", B: "🌙", C: "❤️"}, kunci: "B"},
-  {no: 16, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ayam jadi apa?", gambar: "🐶➡️🟩   🐔➡️🔵 | 🐔➡️❓", pilihan: {A: "🟩", B: "🔵", C: "☀️"}, kunci: "B"},
-  {no: 17, kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk lingkaran. Mana lingkaran kuning?", gambar: "🍌 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟨", B: "🟡", C: "🟣"}, kunci: "B"},
-  {no: 18, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa apel?", gambar: "🍎 🍎 🍎 🍎", pilihan: {A: "4", B: "2", C: "3"}, kunci: "A"},
-  {no: 19, kategori: "Substitusi Kode", soal: "Lihat kodenya! Bunga itu angka berapa?", gambar: "1️⃣🍊   2️⃣🌸   3️⃣🍎 | 🌸➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "A"},
-  {no: 20, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍇🍌🍇🍌🍇🍌❓", pilihan: {A: "🍎", B: "🍌", C: "🍇"}, kunci: "C"},
-  {no: 21, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bebek jadi apa?", gambar: "🦆➡️🟩   🍇➡️🔵 | 🦆➡️❓", pilihan: {A: "🟩", B: "🔵", C: "🔺"}, kunci: "A"},
-  {no: 22, kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk kotak. Mana kotak ungu?", gambar: "🍇 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟣", B: "🟧", C: "🟪"}, kunci: "C"},
-  {no: 23, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa gajah?", gambar: "🐘 🐘 🐘", pilihan: {A: "5", B: "4", C: "3"}, kunci: "C"},
-  {no: 24, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🍌   2️⃣🐱   3️⃣🍇 | 2️⃣➡️❓", pilihan: {A: "🐱", B: "🍇", C: "🍌"}, kunci: "A"},
-  {no: 25, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⭐🌙⭐🌙⭐🌙❓", pilihan: {A: "❤️", B: "⭐", C: "🌙"}, kunci: "B"},
-  {no: 26, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Apel jadi apa?", gambar: "🍎➡️🌙   🐸➡️🔺 | 🍎➡️❓", pilihan: {A: "🌙", B: "☀️", C: "🔺"}, kunci: "A"},
-  {no: 27, kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk lingkaran. Mana lingkaran hijau?", gambar: "🐸 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟢", B: "🟡", C: "🟩"}, kunci: "A"},
-  {no: 28, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kura-kura?", gambar: "🐢 🐢", pilihan: {A: "3", B: "2", C: "4"}, kunci: "B"},
-  {no: 29, kategori: "Substitusi Kode", soal: "Lihat kodenya! Apel itu angka berapa?", gambar: "1️⃣🍊   2️⃣🍓   3️⃣🍎 | 🍎➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "C"},
-  {no: 30, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🎈🌸🎈🌸🎈❓", pilihan: {A: "🌸", B: "🎈", C: "🚗"}, kunci: "A"},
-  {no: 31, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Mobil jadi apa?", gambar: "🍓➡️🟣   🚗➡️🔺 | 🚗➡️❓", pilihan: {A: "🔺", B: "🟩", C: "🟣"}, kunci: "A"},
-  {no: 32, kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk kotak. Mana kotak kuning?", gambar: "🍌 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟧", B: "🟨", C: "💛"}, kunci: "B"},
-  {no: 33, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bola?", gambar: "⚽", pilihan: {A: "3", B: "1", C: "2"}, kunci: "B"},
-  {no: 34, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🦋   2️⃣🍌   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🦋", B: "🍌", C: "🐔"}, kunci: "B"},
-  {no: 35, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽🌸⚽🌸⚽❓", pilihan: {A: "🚗", B: "🌸", C: "⚽"}, kunci: "B"},
-  {no: 36, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "🎈➡️⭐   🐢➡️🟩 | 🎈➡️❓", pilihan: {A: "🟩", B: "❤️", C: "⭐"}, kunci: "C"},
-  {no: 37, kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk hati. Mana hati hijau?", gambar: "🐸 ➕ 🤍 ➡️ ❓", pilihan: {A: "💙", B: "🟩", C: "💚"}, kunci: "C"},
-  {no: 38, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bebek?", gambar: "🦆 🦆 🦆 🦆", pilihan: {A: "2", B: "4", C: "6"}, kunci: "B"},
-  {no: 39, kategori: "Substitusi Kode", soal: "Lihat kodenya! Balon itu angka berapa?", gambar: "1️⃣🎈   2️⃣🍓   3️⃣🍇 | 🎈➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "A"},
-  {no: 40, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🟡🟣🟡🟣🟡🟣❓", pilihan: {A: "🟡", B: "🔵", C: "🟣"}, kunci: "A"},
-  {no: 41, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kura-kura jadi apa?", gambar: "🐢➡️🟣   🚗➡️❤️ | 🐢➡️❓", pilihan: {A: "🔺", B: "❤️", C: "🟣"}, kunci: "C"},
-  {no: 42, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk hati. Mana hati merah?", gambar: "🍎 ➕ 🤍 ➡️ ❓", pilihan: {A: "❤️", B: "💙", C: "🔴"}, kunci: "A"},
-  {no: 43, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa ikan?", gambar: "🐟 🐟 🐟 🐟 🐟", pilihan: {A: "6", B: "3", C: "5"}, kunci: "C"},
-  {no: 44, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🦆   2️⃣🍦   3️⃣🐟 | 2️⃣➡️❓", pilihan: {A: "🦆", B: "🐟", C: "🍦"}, kunci: "C"},
-  {no: 45, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍎🍓🍎🍓🍎🍓❓", pilihan: {A: "🍌", B: "🍎", C: "🍓"}, kunci: "B"},
-  {no: 46, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Es krim jadi apa?", gambar: "🌸➡️🟩   🍦➡️🟣 | 🍦➡️❓", pilihan: {A: "🟣", B: "🟩", C: "🔺"}, kunci: "A"},
-  {no: 47, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk hati. Mana hati oranye?", gambar: "🍊 ➕ 🤍 ➡️ ❓", pilihan: {A: "💚", B: "🧡", C: "🟧"}, kunci: "B"},
-  {no: 48, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bunga?", gambar: "🌸 🌸 🌸", pilihan: {A: "1", B: "3", C: "4"}, kunci: "B"},
-  {no: 49, kategori: "Substitusi Kode", soal: "Lihat kodenya! Kupu-kupu itu angka berapa?", gambar: "1️⃣🐱   2️⃣🐘   3️⃣🦋 | 🦋➡️❓", pilihan: {A: "3️⃣", B: "2️⃣", C: "1️⃣"}, kunci: "A"},
-  {no: 50, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "❤️☀️❤️☀️❤️❓", pilihan: {A: "❤️", B: "☀️", C: "⭐"}, kunci: "B"},
-  {no: 51, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ayam jadi apa?", gambar: "🐔➡️🔺   🚗➡️🔵 | 🐔➡️❓", pilihan: {A: "🔵", B: "☀️", C: "🔺"}, kunci: "C"},
-  {no: 52, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk kotak. Mana kotak oranye?", gambar: "🍊 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟧", B: "🟪", C: "🧡"}, kunci: "A"},
-  {no: 53, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kucing?", gambar: "🐱 🐱 🐱 🐱", pilihan: {A: "4", B: "3", C: "5"}, kunci: "A"},
-  {no: 54, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka tiga itu gambar apa?", gambar: "1️⃣🍊   2️⃣🐔   3️⃣🐶 | 3️⃣➡️❓", pilihan: {A: "🍊", B: "🐶", C: "🐔"}, kunci: "B"},
-  {no: 55, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🚗🚗🌸🚗🚗❓", pilihan: {A: "⚽", B: "🌸", C: "🚗"}, kunci: "B"},
-  {no: 56, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bola jadi apa?", gambar: "🐢➡️🟣   ⚽➡️🔵 | ⚽➡️❓", pilihan: {A: "🔵", B: "🟣", C: "❤️"}, kunci: "A"},
-  {no: 57, kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk lingkaran. Mana lingkaran ungu?", gambar: "🍇 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟣", B: "🟪", C: "🟠"}, kunci: "A"},
-  {no: 58, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa ayam?", gambar: "🐔 🐔 🐔 🐔 🐔", pilihan: {A: "3", B: "5", C: "4"}, kunci: "B"},
-  {no: 59, kategori: "Substitusi Kode", soal: "Lihat kodenya! Bunga itu angka berapa?", gambar: "1️⃣🐢   2️⃣🌸   3️⃣🚗 | 🌸➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "B"},
-  {no: 60, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽⚽🎈⚽⚽🎈❓", pilihan: {A: "🎈", B: "⚽", C: "🚗"}, kunci: "B"},
-  {no: 61, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "⚽➡️☀️   🎈➡️🟩   🌸➡️🌙 | 🎈➡️❓", pilihan: {A: "🟩", B: "🌙", C: "☀️"}, kunci: "A"},
-  {no: 62, kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk kotak. Mana kotak hijau?", gambar: "🐸 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟢", B: "🟨", C: "🟩"}, kunci: "C"},
-  {no: 63, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa es krim?", gambar: "🍦 🍦", pilihan: {A: "1", B: "2", C: "4"}, kunci: "B"},
-  {no: 64, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🎈   2️⃣🍎   3️⃣🐱 | 2️⃣➡️❓", pilihan: {A: "🎈", B: "🍎", C: "🐱"}, kunci: "B"},
-  {no: 65, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🔴🔴🟡🔴🔴❓", pilihan: {A: "🔴", B: "🟡", C: "🟣"}, kunci: "B"},
-  {no: 66, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "🍓➡️🟩   ⚽➡️🔺   🎈➡️❤️ | 🎈➡️❓", pilihan: {A: "🔺", B: "❤️", C: "🟩"}, kunci: "B"},
-  {no: 67, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk kotak. Mana kotak merah?", gambar: "🍎 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟥", B: "🔴", C: "🟪"}, kunci: "A"},
-  {no: 68, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa jeruk?", gambar: "🍊 🍊 🍊 🍊 🍊", pilihan: {A: "4", B: "5", C: "6"}, kunci: "B"},
-  {no: 69, kategori: "Substitusi Kode", soal: "Lihat kodenya! Stroberi itu angka berapa?", gambar: "1️⃣🐱   2️⃣🍎   3️⃣🍓 | 🍓➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "B"},
-  {no: 70, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🐰🐰🐶🐰🐰🐶❓", pilihan: {A: "🐰", B: "🐱", C: "🐶"}, kunci: "A"},
-  {no: 71, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ikan jadi apa?", gambar: "🐟➡️❤️   🌸➡️🟣   🐸➡️🌙 | 🐟➡️❓", pilihan: {A: "🌙", B: "❤️", C: "🟣"}, kunci: "B"},
-  {no: 72, kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk hati. Mana hati kuning?", gambar: "🍌 ➕ 🤍 ➡️ ❓", pilihan: {A: "🟨", B: "💛", C: "🧡"}, kunci: "B"},
-  {no: 73, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa katak?", gambar: "🐸 🐸 🐸 🐸 🐸", pilihan: {A: "6", B: "3", C: "5"}, kunci: "C"},
-  {no: 74, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🐸   2️⃣🍇   3️⃣🐢 | 2️⃣➡️❓", pilihan: {A: "🐸", B: "🐢", C: "🍇"}, kunci: "C"},
-  {no: 75, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍇🍎🍎🍇🍎❓", pilihan: {A: "🍎", B: "🍓", C: "🍇"}, kunci: "A"},
-  {no: 76, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Anggur jadi apa?", gambar: "🍇➡️❤️   🍎➡️🟩   ⚽➡️🟣 | 🍇➡️❓", pilihan: {A: "🟩", B: "❤️", C: "🟣"}, kunci: "B"},
-  {no: 77, kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk hati. Mana hati ungu?", gambar: "🍇 ➕ 🤍 ➡️ ❓", pilihan: {A: "💚", B: "🟣", C: "💜"}, kunci: "C"},
-  {no: 78, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa anjing?", gambar: "🐶", pilihan: {A: "1", B: "2", C: "3"}, kunci: "A"},
-  {no: 79, kategori: "Substitusi Kode", soal: "Lihat kodenya! Kura-kura itu angka berapa?", gambar: "1️⃣🐢   2️⃣🐰   3️⃣🍊 | 🐢➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "A"},
-  {no: 80, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍓🍎🍎🍓🍎🍎❓", pilihan: {A: "🍇", B: "🍓", C: "🍎"}, kunci: "B"},
-  {no: 81, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Katak jadi apa?", gambar: "🍦➡️🔵   🐟➡️⭐   🐸➡️🟣 | 🐸➡️❓", pilihan: {A: "⭐", B: "🟣", C: "🔵"}, kunci: "B"},
-  {no: 82, kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk lingkaran. Mana lingkaran biru?", gambar: "🐳 ➕ ⚪ ➡️ ❓", pilihan: {A: "🔵", B: "🟦", C: "🔴"}, kunci: "A"},
-  {no: 83, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa balon?", gambar: "🎈 🎈", pilihan: {A: "1", B: "4", C: "2"}, kunci: "C"},
-  {no: 84, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🍓   2️⃣🍇   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🍇", B: "🍓", C: "🐔"}, kunci: "A"},
-  {no: 85, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🚗⚽⚽🚗⚽⚽❓", pilihan: {A: "⚽", B: "🚗", C: "🎈"}, kunci: "B"},
-  {no: 86, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kelinci jadi apa?", gambar: "🍦➡️🔵   🐰➡️🟩   🌸➡️🌙 | 🐰➡️❓", pilihan: {A: "🌙", B: "🔵", C: "🟩"}, kunci: "C"},
-  {no: 87, kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk kotak. Mana kotak biru?", gambar: "🐳 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟦", B: "🟧", C: "🔵"}, kunci: "A"},
-  {no: 88, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa mobil?", gambar: "🚗 🚗 🚗 🚗", pilihan: {A: "4", B: "5", C: "3"}, kunci: "A"},
-  {no: 89, kategori: "Substitusi Kode", soal: "Lihat kodenya! Katak itu angka berapa?", gambar: "1️⃣🍓   2️⃣🐸   3️⃣🌸 | 🐸➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "C"},
-  {no: 90, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🎈⚽🌸🎈⚽🌸❓", pilihan: {A: "⚽", B: "🌸", C: "🎈"}, kunci: "C"},
-  {no: 91, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kucing jadi apa?", gambar: "🐱➡️☀️   🍊➡️🔺   🐘➡️❤️ | 🐱➡️❓", pilihan: {A: "❤️", B: "☀️", C: "🔺"}, kunci: "B"},
-  {no: 92, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk lingkaran. Mana lingkaran merah?", gambar: "🍎 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟡", B: "🔴", C: "🟥"}, kunci: "B"},
-  {no: 93, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa anggur?", gambar: "🍇", pilihan: {A: "2", B: "1", C: "3"}, kunci: "B"},
-  {no: 94, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka satu itu gambar apa?", gambar: "1️⃣🐸   2️⃣⚽   3️⃣🐢 | 1️⃣➡️❓", pilihan: {A: "⚽", B: "🐢", C: "🐸"}, kunci: "C"},
-  {no: 95, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽🌸🎈⚽🌸❓", pilihan: {A: "🌸", B: "⚽", C: "🎈"}, kunci: "C"},
-  {no: 96, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Stroberi jadi apa?", gambar: "🍓➡️⭐   🐔➡️☀️   🍇➡️🔵 | 🍓➡️❓", pilihan: {A: "🔵", B: "☀️", C: "⭐"}, kunci: "C"},
-  {no: 97, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk lingkaran. Mana lingkaran oranye?", gambar: "🍊 ➕ ⚪ ➡️ ❓", pilihan: {A: "🧡", B: "🟡", C: "🟠"}, kunci: "C"},
-  {no: 98, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kupu-kupu?", gambar: "🦋 🦋", pilihan: {A: "3", B: "1", C: "2"}, kunci: "C"},
-  {no: 99, kategori: "Substitusi Kode", soal: "Lihat kodenya! Ikan itu angka berapa?", gambar: "1️⃣🌸   2️⃣🐘   3️⃣🐟 | 🐟➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "C"},
-  {no: 100, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️⭐🌙❤️⭐❓", pilihan: {A: "🌙", B: "❤️", C: "⭐"}, kunci: "A"},
+  {no: 1, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau jeruk, jadi apa ya?", gambar: "🍊➡️🌙 | 🍊➡️❓", pilihan: {A: "🌙", B: "🔵", C: ""}, kunci: "A"},
+  {no: 2, usia: "3", kategori: "Enkoding Kombinasi", soal: "Jeruk warnanya apa? Cari warna yang sama!", gambar: "🍊 ➡️ 🎨❓", pilihan: {A: "🟠", B: "🟡", C: ""}, kunci: "A"},
+  {no: 3, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa anjing?", gambar: "🐶", pilihan: {A: "1 ●", B: "2 ●●", C: ""}, kunci: "A"},
+  {no: 4, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🍇   2️⃣🍊 | 1️⃣➡️❓", pilihan: {A: "🍇", B: "🍊", C: ""}, kunci: "A"},
+  {no: 5, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🐸🐱🐸🐱🐸❓", pilihan: {A: "🐱", B: "🐸", C: ""}, kunci: "A"},
+  {no: 6, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau es krim, jadi apa ya?", gambar: "🍦➡️🔺 | 🍦➡️❓", pilihan: {A: "❤️", B: "🔺", C: ""}, kunci: "B"},
+  {no: 7, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cari yang sama! Mana lingkaran?", gambar: "⚪ ➡️ ❓", pilihan: {A: "⚪", B: "🔺", C: ""}, kunci: "A"},
+  {no: 8, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa kupu-kupu?", gambar: "🦋", pilihan: {A: "2 ●●", B: "1 ●", C: ""}, kunci: "B"},
+  {no: 9, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🍊   2️⃣🦆 | 1️⃣➡️❓", pilihan: {A: "🍊", B: "🦆", C: ""}, kunci: "A"},
+  {no: 10, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🍇🍌🍇🍌🍇❓", pilihan: {A: "🍇", B: "🍌", C: ""}, kunci: "B"},
+  {no: 11, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau jeruk, jadi apa ya?", gambar: "🍊➡️🔵 | 🍊➡️❓", pilihan: {A: "☀️", B: "🔵", C: ""}, kunci: "B"},
+  {no: 12, usia: "3", kategori: "Enkoding Kombinasi", soal: "Paus warnanya apa? Cari warna yang sama!", gambar: "🐳 ➡️ 🎨❓", pilihan: {A: "🔵", B: "🟡", C: "🟣"}, kunci: "A"},
+  {no: 13, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa anggur?", gambar: "🍇 🍇 🍇", pilihan: {A: "1 ●", B: "3 ●●●", C: ""}, kunci: "B"},
+  {no: 14, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🍦   2️⃣🍓 | 1️⃣➡️❓", pilihan: {A: "🍓", B: "🍦", C: ""}, kunci: "B"},
+  {no: 15, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🔵🟡🔵🟡🔵❓", pilihan: {A: "🔵", B: "🟡", C: ""}, kunci: "B"},
+  {no: 16, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau pisang, jadi apa ya?", gambar: "🍌➡️🟩 | 🍌➡️❓", pilihan: {A: "☀️", B: "🔵", C: "🟩"}, kunci: "C"},
+  {no: 17, usia: "3", kategori: "Enkoding Kombinasi", soal: "Wortel warnanya apa? Cari warna yang sama!", gambar: "🥕 ➡️ 🎨❓", pilihan: {A: "🔴", B: "🟠", C: ""}, kunci: "B"},
+  {no: 18, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa kucing?", gambar: "🐱", pilihan: {A: "1 ●", B: "2 ●●", C: "3 ●●●"}, kunci: "A"},
+  {no: 19, usia: "3", kategori: "Substitusi Kode", soal: "Angka tiga itu gambar apa ya?", gambar: "1️⃣🐔   2️⃣🍇   3️⃣🌸 | 3️⃣➡️❓", pilihan: {A: "🌸", B: "🍇", C: "🐔"}, kunci: "A"},
+  {no: 20, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🌙❤️🌙❤️🌙❓", pilihan: {A: "⭐", B: "❤️", C: "🌙"}, kunci: "B"},
+  {no: 21, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau ikan, jadi apa ya?", gambar: "🐟➡️🌙 | 🐟➡️❓", pilihan: {A: "❤️", B: "🔺", C: "🌙"}, kunci: "C"},
+  {no: 22, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cari yang sama! Mana bulan?", gambar: "🌙 ➡️ ❓", pilihan: {A: "⚪", B: "❤️", C: "🌙"}, kunci: "C"},
+  {no: 23, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa bola?", gambar: "⚽ ⚽", pilihan: {A: "2 ●●", B: "1 ●", C: "3 ●●●"}, kunci: "A"},
+  {no: 24, usia: "3", kategori: "Substitusi Kode", soal: "Angka tiga itu gambar apa ya?", gambar: "1️⃣🎈   2️⃣🐸   3️⃣🍇 | 3️⃣➡️❓", pilihan: {A: "🎈", B: "🍇", C: "🐸"}, kunci: "B"},
+  {no: 25, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🌸🎈🌸🎈🌸❓", pilihan: {A: "🌸", B: "🎈", C: "⚽"}, kunci: "B"},
+  {no: 26, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau pisang, jadi apa ya?", gambar: "🍌➡️🔵 | 🍌➡️❓", pilihan: {A: "🔵", B: "🌙", C: ""}, kunci: "A"},
+  {no: 27, usia: "3", kategori: "Enkoding Kombinasi", soal: "Gajah warnanya apa? Cari warna yang sama!", gambar: "🐘 ➡️ 🎨❓", pilihan: {A: "⚪", B: "🟤", C: ""}, kunci: "A"},
+  {no: 28, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa kura-kura?", gambar: "🐢 🐢", pilihan: {A: "2 ●●", B: "1 ●", C: ""}, kunci: "A"},
+  {no: 29, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🐟   2️⃣🐰 | 1️⃣➡️❓", pilihan: {A: "🐟", B: "🐰", C: ""}, kunci: "A"},
+  {no: 30, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🐰🐸🐰🐸🐰❓", pilihan: {A: "🐸", B: "🐰", C: ""}, kunci: "A"},
+  {no: 31, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau kura-kura, jadi apa ya?", gambar: "🐢➡️🟣 | 🐢➡️❓", pilihan: {A: "🟣", B: "🟩", C: ""}, kunci: "A"},
+  {no: 32, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cokelat warnanya apa? Cari warna yang sama!", gambar: "🍫 ➡️ 🎨❓", pilihan: {A: "🔵", B: "🟤", C: "🟣"}, kunci: "B"},
+  {no: 33, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa ayam?", gambar: "🐔 🐔 🐔", pilihan: {A: "1 ●", B: "3 ●●●", C: ""}, kunci: "B"},
+  {no: 34, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🐰   2️⃣🐘 | 1️⃣➡️❓", pilihan: {A: "🐰", B: "🐘", C: ""}, kunci: "A"},
+  {no: 35, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🍇🍌🍇🍌🍇❓", pilihan: {A: "🍌", B: "🍇", C: ""}, kunci: "A"},
+  {no: 36, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau kelinci, jadi apa ya?", gambar: "🐰➡️🌙 | 🐰➡️❓", pilihan: {A: "🌙", B: "🟩", C: ""}, kunci: "A"},
+  {no: 37, usia: "3", kategori: "Enkoding Kombinasi", soal: "Pisang warnanya apa? Cari warna yang sama!", gambar: "🍌 ➡️ 🎨❓", pilihan: {A: "🟡", B: "🔴", C: ""}, kunci: "A"},
+  {no: 38, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa pisang?", gambar: "🍌", pilihan: {A: "1 ●", B: "2 ●●", C: ""}, kunci: "A"},
+  {no: 39, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🍦   2️⃣🍎 | 1️⃣➡️❓", pilihan: {A: "🍦", B: "🍎", C: ""}, kunci: "A"},
+  {no: 40, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🟡🔵🟡🔵🟡❓", pilihan: {A: "🟡", B: "🔵", C: ""}, kunci: "B"},
+  {no: 41, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau mobil, jadi apa ya?", gambar: "🚗➡️🔵 | 🚗➡️❓", pilihan: {A: "🟣", B: "🔵", C: "❤️"}, kunci: "B"},
+  {no: 42, usia: "3", kategori: "Enkoding Kombinasi", soal: "Anggur warnanya apa? Cari warna yang sama!", gambar: "🍇 ➡️ 🎨❓", pilihan: {A: "🟣", B: "⚪", C: ""}, kunci: "A"},
+  {no: 43, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa mobil?", gambar: "🚗", pilihan: {A: "3 ●●●", B: "1 ●", C: "2 ●●"}, kunci: "B"},
+  {no: 44, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🐱   2️⃣⚽   3️⃣🍓 | 1️⃣➡️❓", pilihan: {A: "🐱", B: "⚽", C: "🍓"}, kunci: "A"},
+  {no: 45, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "⭐🌙⭐🌙⭐❓", pilihan: {A: "🌙", B: "☀️", C: "⭐"}, kunci: "A"},
+  {no: 46, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau bunga, jadi apa ya?", gambar: "🌸➡️⭐ | 🌸➡️❓", pilihan: {A: "⭐", B: "☀️", C: "🟣"}, kunci: "A"},
+  {no: 47, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cari yang sama! Mana bintang?", gambar: "⭐ ➡️ ❓", pilihan: {A: "❤️", B: "⭐", C: "🌙"}, kunci: "B"},
+  {no: 48, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa bunga?", gambar: "🌸 🌸", pilihan: {A: "3 ●●●", B: "1 ●", C: "2 ●●"}, kunci: "C"},
+  {no: 49, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🐱   2️⃣🎈   3️⃣🌸 | 1️⃣➡️❓", pilihan: {A: "🎈", B: "🌸", C: "🐱"}, kunci: "C"},
+  {no: 50, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🎈⚽🎈⚽🎈❓", pilihan: {A: "🌸", B: "⚽", C: "🎈"}, kunci: "B"},
+  {no: 51, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau bebek, jadi apa ya?", gambar: "🦆➡️⭐ | 🦆➡️❓", pilihan: {A: "❤️", B: "⭐", C: ""}, kunci: "B"},
+  {no: 52, usia: "3", kategori: "Enkoding Kombinasi", soal: "Stroberi warnanya apa? Cari warna yang sama!", gambar: "🍓 ➡️ 🎨❓", pilihan: {A: "🟢", B: "🔴", C: "🟡"}, kunci: "B"},
+  {no: 53, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa bebek?", gambar: "🦆", pilihan: {A: "1 ●", B: "2 ●●", C: ""}, kunci: "A"},
+  {no: 54, usia: "3", kategori: "Substitusi Kode", soal: "Angka dua itu gambar apa ya?", gambar: "1️⃣🍎   2️⃣🎈 | 2️⃣➡️❓", pilihan: {A: "🍎", B: "🎈", C: ""}, kunci: "B"},
+  {no: 55, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🐱🐸🐱🐸🐱❓", pilihan: {A: "🐱", B: "🐸", C: ""}, kunci: "B"},
+  {no: 56, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau anggur, jadi apa ya?", gambar: "🍇➡️☀️ | 🍇➡️❓", pilihan: {A: "🌙", B: "☀️", C: ""}, kunci: "B"},
+  {no: 57, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cari yang sama! Mana kotak?", gambar: "🟦 ➡️ ❓", pilihan: {A: "🟦", B: "❤️", C: "🔺"}, kunci: "A"},
+  {no: 58, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa apel?", gambar: "🍎 🍎 🍎", pilihan: {A: "3 ●●●", B: "1 ●", C: ""}, kunci: "A"},
+  {no: 59, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🚗   2️⃣🐟 | 1️⃣➡️❓", pilihan: {A: "🚗", B: "🐟", C: ""}, kunci: "A"},
+  {no: 60, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🍓🍇🍓🍇🍓❓", pilihan: {A: "🍇", B: "🍓", C: ""}, kunci: "A"},
+  {no: 61, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau kucing, jadi apa ya?", gambar: "🐱➡️🔺 | 🐱➡️❓", pilihan: {A: "🔺", B: "❤️", C: ""}, kunci: "A"},
+  {no: 62, usia: "3", kategori: "Enkoding Kombinasi", soal: "Brokoli warnanya apa? Cari warna yang sama!", gambar: "🥦 ➡️ 🎨❓", pilihan: {A: "🟢", B: "⚪", C: ""}, kunci: "A"},
+  {no: 63, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa stroberi?", gambar: "🍓 🍓 🍓", pilihan: {A: "3 ●●●", B: "1 ●", C: ""}, kunci: "A"},
+  {no: 64, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🐢   2️⃣🐘 | 1️⃣➡️❓", pilihan: {A: "🐢", B: "🐘", C: ""}, kunci: "A"},
+  {no: 65, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🔵🟢🔵🟢🔵❓", pilihan: {A: "🟢", B: "🔵", C: ""}, kunci: "A"},
+  {no: 66, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau anjing, jadi apa ya?", gambar: "🐶➡️🌙 | 🐶➡️❓", pilihan: {A: "🌙", B: "🟩", C: "❤️"}, kunci: "A"},
+  {no: 67, usia: "3", kategori: "Enkoding Kombinasi", soal: "Apel warnanya apa? Cari warna yang sama!", gambar: "🍎 ➡️ 🎨❓", pilihan: {A: "🟠", B: "🔴", C: "🟢"}, kunci: "B"},
+  {no: 68, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa katak?", gambar: "🐸 🐸 🐸", pilihan: {A: "2 ●●", B: "1 ●", C: "3 ●●●"}, kunci: "C"},
+  {no: 69, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🍎   2️⃣⚽   3️⃣🍓 | 1️⃣➡️❓", pilihan: {A: "🍓", B: "⚽", C: "🍎"}, kunci: "C"},
+  {no: 70, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "⭐☀️⭐☀️⭐❓", pilihan: {A: "⭐", B: "❤️", C: "☀️"}, kunci: "C"},
+  {no: 71, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau bola, jadi apa ya?", gambar: "⚽➡️🌙 | ⚽➡️❓", pilihan: {A: "🌙", B: "❤️", C: "🟣"}, kunci: "A"},
+  {no: 72, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cari yang sama! Mana segitiga?", gambar: "🔺 ➡️ ❓", pilihan: {A: "⚪", B: "🔺", C: ""}, kunci: "B"},
+  {no: 73, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa ikan?", gambar: "🐟 🐟", pilihan: {A: "3 ●●●", B: "2 ●●", C: "1 ●"}, kunci: "B"},
+  {no: 74, usia: "3", kategori: "Substitusi Kode", soal: "Angka dua itu gambar apa ya?", gambar: "1️⃣⚽   2️⃣🍇   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🍇", B: "🐔", C: "⚽"}, kunci: "A"},
+  {no: 75, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🎈🌸🎈🌸🎈❓", pilihan: {A: "🌸", B: "🚗", C: "🎈"}, kunci: "A"},
+  {no: 76, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau es krim, jadi apa ya?", gambar: "🍦➡️🟣 | 🍦➡️❓", pilihan: {A: "⭐", B: "🟣", C: ""}, kunci: "B"},
+  {no: 77, usia: "3", kategori: "Enkoding Kombinasi", soal: "Air warnanya apa? Cari warna yang sama!", gambar: "💧 ➡️ 🎨❓", pilihan: {A: "⚪", B: "🔵", C: ""}, kunci: "B"},
+  {no: 78, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa es krim?", gambar: "🍦 🍦", pilihan: {A: "3 ●●●", B: "2 ●●", C: ""}, kunci: "B"},
+  {no: 79, usia: "3", kategori: "Substitusi Kode", soal: "Angka dua itu gambar apa ya?", gambar: "1️⃣🐘   2️⃣🐟 | 2️⃣➡️❓", pilihan: {A: "🐟", B: "🐘", C: ""}, kunci: "A"},
+  {no: 80, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🐱🐶🐱🐶🐱❓", pilihan: {A: "🐶", B: "🐱", C: ""}, kunci: "A"},
+  {no: 81, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau stroberi, jadi apa ya?", gambar: "🍓➡️❤️ | 🍓➡️❓", pilihan: {A: "🔵", B: "❤️", C: ""}, kunci: "B"},
+  {no: 82, usia: "3", kategori: "Enkoding Kombinasi", soal: "Bunga matahari warnanya apa? Cari warna yang sama!", gambar: "🌻 ➡️ 🎨❓", pilihan: {A: "🟢", B: "🟡", C: ""}, kunci: "B"},
+  {no: 83, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa gajah?", gambar: "🐘", pilihan: {A: "2 ●●", B: "1 ●", C: ""}, kunci: "B"},
+  {no: 84, usia: "3", kategori: "Substitusi Kode", soal: "Angka dua itu gambar apa ya?", gambar: "1️⃣🌸   2️⃣🐘 | 2️⃣➡️❓", pilihan: {A: "🌸", B: "🐘", C: ""}, kunci: "B"},
+  {no: 85, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🍇🍎🍇🍎🍇❓", pilihan: {A: "🍇", B: "🍎", C: ""}, kunci: "B"},
+  {no: 86, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau stroberi, jadi apa ya?", gambar: "🍓➡️🔵 | 🍓➡️❓", pilihan: {A: "🔵", B: "❤️", C: ""}, kunci: "A"},
+  {no: 87, usia: "3", kategori: "Enkoding Kombinasi", soal: "Cari yang sama! Mana hati?", gambar: "❤️ ➡️ ❓", pilihan: {A: "🌙", B: "❤️", C: ""}, kunci: "B"},
+  {no: 88, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa jeruk?", gambar: "🍊 🍊", pilihan: {A: "1 ●", B: "2 ●●", C: ""}, kunci: "B"},
+  {no: 89, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🍓   2️⃣🍦 | 1️⃣➡️❓", pilihan: {A: "🍦", B: "🍓", C: ""}, kunci: "B"},
+  {no: 90, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "🟡🟢🟡🟢🟡❓", pilihan: {A: "🟢", B: "🟡", C: ""}, kunci: "A"},
+  {no: 91, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau anjing, jadi apa ya?", gambar: "🐶➡️☀️ | 🐶➡️❓", pilihan: {A: "🟩", B: "⭐", C: "☀️"}, kunci: "C"},
+  {no: 92, usia: "3", kategori: "Enkoding Kombinasi", soal: "Terong warnanya apa? Cari warna yang sama!", gambar: "🍆 ➡️ 🎨❓", pilihan: {A: "🟢", B: "🟣", C: ""}, kunci: "B"},
+  {no: 93, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa kelinci?", gambar: "🐰 🐰 🐰", pilihan: {A: "1 ●", B: "3 ●●●", C: "2 ●●"}, kunci: "B"},
+  {no: 94, usia: "3", kategori: "Substitusi Kode", soal: "Angka satu itu gambar apa ya?", gambar: "1️⃣🐶   2️⃣🐘   3️⃣🐔 | 1️⃣➡️❓", pilihan: {A: "🐶", B: "🐘", C: "🐔"}, kunci: "A"},
+  {no: 95, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "❤️⭐❤️⭐❤️❓", pilihan: {A: "☀️", B: "❤️", C: "⭐"}, kunci: "C"},
+  {no: 96, usia: "3", kategori: "Enkoding Substitusi", soal: "Lihat gambarnya! Kalau gajah, jadi apa ya?", gambar: "🐘➡️🌙 | 🐘➡️❓", pilihan: {A: "🌙", B: "⭐", C: "🔺"}, kunci: "A"},
+  {no: 97, usia: "3", kategori: "Enkoding Kombinasi", soal: "Katak warnanya apa? Cari warna yang sama!", gambar: "🐸 ➡️ 🎨❓", pilihan: {A: "🟢", B: "⚪", C: "🔴"}, kunci: "A"},
+  {no: 98, usia: "3", kategori: "Enumerasi Piktografik", soal: "Ayo hitung bersama! Ada berapa balon?", gambar: "🎈 🎈", pilihan: {A: "1 ●", B: "3 ●●●", C: "2 ●●"}, kunci: "C"},
+  {no: 99, usia: "3", kategori: "Substitusi Kode", soal: "Angka dua itu gambar apa ya?", gambar: "1️⃣🐱   2️⃣🍓   3️⃣🐰 | 2️⃣➡️❓", pilihan: {A: "🐰", B: "🐱", C: "🍓"}, kunci: "C"},
+  {no: 100, usia: "3", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Habis ini apa ya?", gambar: "⚽🌸⚽🌸⚽❓", pilihan: {A: "⚽", B: "🚗", C: "🌸"}, kunci: "C"},
+  {no: 101, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bebek jadi apa?", gambar: "🍓➡️❤️   🦆➡️🟣 | 🦆➡️❓", pilihan: {A: "🟣", B: "❤️", C: "🟩"}, kunci: "A"},
+  {no: 102, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk lingkaran. Mana lingkaran merah?", gambar: "🍎 ➕ ⚪ ➡️ ❓", pilihan: {A: "❤️", B: "🟠", C: "🔴"}, kunci: "C"},
+  {no: 103, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa pisang?", gambar: "🍌 🍌 🍌", pilihan: {A: "5", B: "3", C: "2"}, kunci: "B"},
+  {no: 104, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka tiga itu gambar apa?", gambar: "1️⃣🐔   2️⃣🐸   3️⃣🐰 | 3️⃣➡️❓", pilihan: {A: "🐰", B: "🐸", C: "🐔"}, kunci: "A"},
+  {no: 105, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍓🍇🍓🍇🍓🍇❓", pilihan: {A: "🍓", B: "🍎", C: "🍇"}, kunci: "A"},
+  {no: 106, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kupu-kupu jadi apa?", gambar: "🦋➡️🔺   ⚽➡️⭐ | 🦋➡️❓", pilihan: {A: "🟩", B: "⭐", C: "🔺"}, kunci: "C"},
+  {no: 107, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk lingkaran. Mana lingkaran oranye?", gambar: "🍊 ➕ ⚪ ➡️ ❓", pilihan: {A: "🧡", B: "🔴", C: "🟠"}, kunci: "C"},
+  {no: 108, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa stroberi?", gambar: "🍓", pilihan: {A: "1", B: "2", C: "3"}, kunci: "A"},
+  {no: 109, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Katak itu angka berapa?", gambar: "1️⃣🐶   2️⃣🐸   3️⃣🦋 | 🐸➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "A"},
+  {no: 110, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️🌙❤️🌙❤️❓", pilihan: {A: "🌙", B: "☀️", C: "❤️"}, kunci: "A"},
+  {no: 111, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bola jadi apa?", gambar: "🍓➡️⭐   ⚽➡️☀️ | ⚽➡️❓", pilihan: {A: "☀️", B: "⭐", C: "🌙"}, kunci: "A"},
+  {no: 112, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk hati. Mana hati biru?", gambar: "🐳 ➕ 🤍 ➡️ ❓", pilihan: {A: "🧡", B: "🔵", C: "💙"}, kunci: "C"},
+  {no: 113, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kelinci?", gambar: "🐰 🐰 🐰", pilihan: {A: "3", B: "4", C: "1"}, kunci: "A"},
+  {no: 114, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka satu itu gambar apa?", gambar: "1️⃣🍦   2️⃣🌸   3️⃣🐘 | 1️⃣➡️❓", pilihan: {A: "🐘", B: "🌸", C: "🍦"}, kunci: "C"},
+  {no: 115, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️🌙❤️🌙❤️❓", pilihan: {A: "☀️", B: "🌙", C: "❤️"}, kunci: "B"},
+  {no: 116, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ayam jadi apa?", gambar: "🐶➡️🟩   🐔➡️🔵 | 🐔➡️❓", pilihan: {A: "🟩", B: "🔵", C: "☀️"}, kunci: "B"},
+  {no: 117, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk lingkaran. Mana lingkaran kuning?", gambar: "🍌 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟨", B: "🟡", C: "🟣"}, kunci: "B"},
+  {no: 118, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa apel?", gambar: "🍎 🍎 🍎 🍎", pilihan: {A: "4", B: "2", C: "3"}, kunci: "A"},
+  {no: 119, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Bunga itu angka berapa?", gambar: "1️⃣🍊   2️⃣🌸   3️⃣🍎 | 🌸➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "A"},
+  {no: 120, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍇🍌🍇🍌🍇🍌❓", pilihan: {A: "🍎", B: "🍌", C: "🍇"}, kunci: "C"},
+  {no: 121, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bebek jadi apa?", gambar: "🦆➡️🟩   🍇➡️🔵 | 🦆➡️❓", pilihan: {A: "🟩", B: "🔵", C: "🔺"}, kunci: "A"},
+  {no: 122, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk kotak. Mana kotak ungu?", gambar: "🍇 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟣", B: "🟧", C: "🟪"}, kunci: "C"},
+  {no: 123, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa gajah?", gambar: "🐘 🐘 🐘", pilihan: {A: "5", B: "4", C: "3"}, kunci: "C"},
+  {no: 124, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🍌   2️⃣🐱   3️⃣🍇 | 2️⃣➡️❓", pilihan: {A: "🐱", B: "🍇", C: "🍌"}, kunci: "A"},
+  {no: 125, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⭐🌙⭐🌙⭐🌙❓", pilihan: {A: "❤️", B: "⭐", C: "🌙"}, kunci: "B"},
+  {no: 126, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Apel jadi apa?", gambar: "🍎➡️🌙   🐸➡️🔺 | 🍎➡️❓", pilihan: {A: "🌙", B: "☀️", C: "🔺"}, kunci: "A"},
+  {no: 127, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk lingkaran. Mana lingkaran hijau?", gambar: "🐸 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟢", B: "🟡", C: "🟩"}, kunci: "A"},
+  {no: 128, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kura-kura?", gambar: "🐢 🐢", pilihan: {A: "3", B: "2", C: "4"}, kunci: "B"},
+  {no: 129, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Apel itu angka berapa?", gambar: "1️⃣🍊   2️⃣🍓   3️⃣🍎 | 🍎➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "C"},
+  {no: 130, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🎈🌸🎈🌸🎈❓", pilihan: {A: "🌸", B: "🎈", C: "🚗"}, kunci: "A"},
+  {no: 131, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Mobil jadi apa?", gambar: "🍓➡️🟣   🚗➡️🔺 | 🚗➡️❓", pilihan: {A: "🔺", B: "🟩", C: "🟣"}, kunci: "A"},
+  {no: 132, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk kotak. Mana kotak kuning?", gambar: "🍌 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟧", B: "🟨", C: "💛"}, kunci: "B"},
+  {no: 133, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bola?", gambar: "⚽", pilihan: {A: "3", B: "1", C: "2"}, kunci: "B"},
+  {no: 134, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🦋   2️⃣🍌   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🦋", B: "🍌", C: "🐔"}, kunci: "B"},
+  {no: 135, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽🌸⚽🌸⚽❓", pilihan: {A: "🚗", B: "🌸", C: "⚽"}, kunci: "B"},
+  {no: 136, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "🎈➡️⭐   🐢➡️🟩 | 🎈➡️❓", pilihan: {A: "🟩", B: "❤️", C: "⭐"}, kunci: "C"},
+  {no: 137, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk hati. Mana hati hijau?", gambar: "🐸 ➕ 🤍 ➡️ ❓", pilihan: {A: "💙", B: "🟩", C: "💚"}, kunci: "C"},
+  {no: 138, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bebek?", gambar: "🦆 🦆 🦆 🦆", pilihan: {A: "2", B: "4", C: "6"}, kunci: "B"},
+  {no: 139, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Balon itu angka berapa?", gambar: "1️⃣🎈   2️⃣🍓   3️⃣🍇 | 🎈➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "A"},
+  {no: 140, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🟡🟣🟡🟣🟡🟣❓", pilihan: {A: "🟡", B: "🔵", C: "🟣"}, kunci: "A"},
+  {no: 141, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kura-kura jadi apa?", gambar: "🐢➡️🟣   🚗➡️❤️ | 🐢➡️❓", pilihan: {A: "🔺", B: "❤️", C: "🟣"}, kunci: "C"},
+  {no: 142, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk hati. Mana hati merah?", gambar: "🍎 ➕ 🤍 ➡️ ❓", pilihan: {A: "❤️", B: "💙", C: "🔴"}, kunci: "A"},
+  {no: 143, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa ikan?", gambar: "🐟 🐟 🐟 🐟 🐟", pilihan: {A: "6", B: "3", C: "5"}, kunci: "C"},
+  {no: 144, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🦆   2️⃣🍦   3️⃣🐟 | 2️⃣➡️❓", pilihan: {A: "🦆", B: "🐟", C: "🍦"}, kunci: "C"},
+  {no: 145, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍎🍓🍎🍓🍎🍓❓", pilihan: {A: "🍌", B: "🍎", C: "🍓"}, kunci: "B"},
+  {no: 146, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Es krim jadi apa?", gambar: "🌸➡️🟩   🍦➡️🟣 | 🍦➡️❓", pilihan: {A: "🟣", B: "🟩", C: "🔺"}, kunci: "A"},
+  {no: 147, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk hati. Mana hati oranye?", gambar: "🍊 ➕ 🤍 ➡️ ❓", pilihan: {A: "💚", B: "🧡", C: "🟧"}, kunci: "B"},
+  {no: 148, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bunga?", gambar: "🌸 🌸 🌸", pilihan: {A: "1", B: "3", C: "4"}, kunci: "B"},
+  {no: 149, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Kupu-kupu itu angka berapa?", gambar: "1️⃣🐱   2️⃣🐘   3️⃣🦋 | 🦋➡️❓", pilihan: {A: "3️⃣", B: "2️⃣", C: "1️⃣"}, kunci: "A"},
+  {no: 150, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "❤️☀️❤️☀️❤️❓", pilihan: {A: "❤️", B: "☀️", C: "⭐"}, kunci: "B"},
+  {no: 151, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ayam jadi apa?", gambar: "🐔➡️🔺   🚗➡️🔵 | 🐔➡️❓", pilihan: {A: "🔵", B: "☀️", C: "🔺"}, kunci: "C"},
+  {no: 152, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk kotak. Mana kotak oranye?", gambar: "🍊 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟧", B: "🟪", C: "🧡"}, kunci: "A"},
+  {no: 153, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kucing?", gambar: "🐱 🐱 🐱 🐱", pilihan: {A: "4", B: "3", C: "5"}, kunci: "A"},
+  {no: 154, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka tiga itu gambar apa?", gambar: "1️⃣🍊   2️⃣🐔   3️⃣🐶 | 3️⃣➡️❓", pilihan: {A: "🍊", B: "🐶", C: "🐔"}, kunci: "B"},
+  {no: 155, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🚗🚗🌸🚗🚗❓", pilihan: {A: "⚽", B: "🌸", C: "🚗"}, kunci: "B"},
+  {no: 156, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bola jadi apa?", gambar: "🐢➡️🟣   ⚽➡️🔵 | ⚽➡️❓", pilihan: {A: "🔵", B: "🟣", C: "❤️"}, kunci: "A"},
+  {no: 157, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk lingkaran. Mana lingkaran ungu?", gambar: "🍇 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟣", B: "🟪", C: "🟠"}, kunci: "A"},
+  {no: 158, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa ayam?", gambar: "🐔 🐔 🐔 🐔 🐔", pilihan: {A: "3", B: "5", C: "4"}, kunci: "B"},
+  {no: 159, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Bunga itu angka berapa?", gambar: "1️⃣🐢   2️⃣🌸   3️⃣🚗 | 🌸➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "B"},
+  {no: 160, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽⚽🎈⚽⚽🎈❓", pilihan: {A: "🎈", B: "⚽", C: "🚗"}, kunci: "B"},
+  {no: 161, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "⚽➡️☀️   🎈➡️🟩   🌸➡️🌙 | 🎈➡️❓", pilihan: {A: "🟩", B: "🌙", C: "☀️"}, kunci: "A"},
+  {no: 162, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk kotak. Mana kotak hijau?", gambar: "🐸 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟢", B: "🟨", C: "🟩"}, kunci: "C"},
+  {no: 163, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa es krim?", gambar: "🍦 🍦", pilihan: {A: "1", B: "2", C: "4"}, kunci: "B"},
+  {no: 164, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🎈   2️⃣🍎   3️⃣🐱 | 2️⃣➡️❓", pilihan: {A: "🎈", B: "🍎", C: "🐱"}, kunci: "B"},
+  {no: 165, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🔴🔴🟡🔴🔴❓", pilihan: {A: "🔴", B: "🟡", C: "🟣"}, kunci: "B"},
+  {no: 166, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "🍓➡️🟩   ⚽➡️🔺   🎈➡️❤️ | 🎈➡️❓", pilihan: {A: "🔺", B: "❤️", C: "🟩"}, kunci: "B"},
+  {no: 167, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk kotak. Mana kotak merah?", gambar: "🍎 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟥", B: "🔴", C: "🟪"}, kunci: "A"},
+  {no: 168, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa jeruk?", gambar: "🍊 🍊 🍊 🍊 🍊", pilihan: {A: "4", B: "5", C: "6"}, kunci: "B"},
+  {no: 169, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Stroberi itu angka berapa?", gambar: "1️⃣🐱   2️⃣🍎   3️⃣🍓 | 🍓➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "B"},
+  {no: 170, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🐰🐰🐶🐰🐰🐶❓", pilihan: {A: "🐰", B: "🐱", C: "🐶"}, kunci: "A"},
+  {no: 171, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ikan jadi apa?", gambar: "🐟➡️❤️   🌸➡️🟣   🐸➡️🌙 | 🐟➡️❓", pilihan: {A: "🌙", B: "❤️", C: "🟣"}, kunci: "B"},
+  {no: 172, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk hati. Mana hati kuning?", gambar: "🍌 ➕ 🤍 ➡️ ❓", pilihan: {A: "🟨", B: "💛", C: "🧡"}, kunci: "B"},
+  {no: 173, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa katak?", gambar: "🐸 🐸 🐸 🐸 🐸", pilihan: {A: "6", B: "3", C: "5"}, kunci: "C"},
+  {no: 174, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🐸   2️⃣🍇   3️⃣🐢 | 2️⃣➡️❓", pilihan: {A: "🐸", B: "🐢", C: "🍇"}, kunci: "C"},
+  {no: 175, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍇🍎🍎🍇🍎❓", pilihan: {A: "🍎", B: "🍓", C: "🍇"}, kunci: "A"},
+  {no: 176, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Anggur jadi apa?", gambar: "🍇➡️❤️   🍎➡️🟩   ⚽➡️🟣 | 🍇➡️❓", pilihan: {A: "🟩", B: "❤️", C: "🟣"}, kunci: "B"},
+  {no: 177, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk hati. Mana hati ungu?", gambar: "🍇 ➕ 🤍 ➡️ ❓", pilihan: {A: "💚", B: "🟣", C: "💜"}, kunci: "C"},
+  {no: 178, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa anjing?", gambar: "🐶", pilihan: {A: "1", B: "2", C: "3"}, kunci: "A"},
+  {no: 179, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Kura-kura itu angka berapa?", gambar: "1️⃣🐢   2️⃣🐰   3️⃣🍊 | 🐢➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "A"},
+  {no: 180, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍓🍎🍎🍓🍎🍎❓", pilihan: {A: "🍇", B: "🍓", C: "🍎"}, kunci: "B"},
+  {no: 181, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Katak jadi apa?", gambar: "🍦➡️🔵   🐟➡️⭐   🐸➡️🟣 | 🐸➡️❓", pilihan: {A: "⭐", B: "🟣", C: "🔵"}, kunci: "B"},
+  {no: 182, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk lingkaran. Mana lingkaran biru?", gambar: "🐳 ➕ ⚪ ➡️ ❓", pilihan: {A: "🔵", B: "🟦", C: "🔴"}, kunci: "A"},
+  {no: 183, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa balon?", gambar: "🎈 🎈", pilihan: {A: "1", B: "4", C: "2"}, kunci: "C"},
+  {no: 184, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🍓   2️⃣🍇   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🍇", B: "🍓", C: "🐔"}, kunci: "A"},
+  {no: 185, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🚗⚽⚽🚗⚽⚽❓", pilihan: {A: "⚽", B: "🚗", C: "🎈"}, kunci: "B"},
+  {no: 186, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kelinci jadi apa?", gambar: "🍦➡️🔵   🐰➡️🟩   🌸➡️🌙 | 🐰➡️❓", pilihan: {A: "🌙", B: "🔵", C: "🟩"}, kunci: "C"},
+  {no: 187, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk kotak. Mana kotak biru?", gambar: "🐳 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟦", B: "🟧", C: "🔵"}, kunci: "A"},
+  {no: 188, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa mobil?", gambar: "🚗 🚗 🚗 🚗", pilihan: {A: "4", B: "5", C: "3"}, kunci: "A"},
+  {no: 189, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Katak itu angka berapa?", gambar: "1️⃣🍓   2️⃣🐸   3️⃣🌸 | 🐸➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "C"},
+  {no: 190, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🎈⚽🌸🎈⚽🌸❓", pilihan: {A: "⚽", B: "🌸", C: "🎈"}, kunci: "C"},
+  {no: 191, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kucing jadi apa?", gambar: "🐱➡️☀️   🍊➡️🔺   🐘➡️❤️ | 🐱➡️❓", pilihan: {A: "❤️", B: "☀️", C: "🔺"}, kunci: "B"},
+  {no: 192, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk lingkaran. Mana lingkaran merah?", gambar: "🍎 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟡", B: "🔴", C: "🟥"}, kunci: "B"},
+  {no: 193, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa anggur?", gambar: "🍇", pilihan: {A: "2", B: "1", C: "3"}, kunci: "B"},
+  {no: 194, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka satu itu gambar apa?", gambar: "1️⃣🐸   2️⃣⚽   3️⃣🐢 | 1️⃣➡️❓", pilihan: {A: "⚽", B: "🐢", C: "🐸"}, kunci: "C"},
+  {no: 195, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽🌸🎈⚽🌸❓", pilihan: {A: "🌸", B: "⚽", C: "🎈"}, kunci: "C"},
+  {no: 196, usia: "4", kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Stroberi jadi apa?", gambar: "🍓➡️⭐   🐔➡️☀️   🍇➡️🔵 | 🍓➡️❓", pilihan: {A: "🔵", B: "☀️", C: "⭐"}, kunci: "C"},
+  {no: 197, usia: "4", kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk lingkaran. Mana lingkaran oranye?", gambar: "🍊 ➕ ⚪ ➡️ ❓", pilihan: {A: "🧡", B: "🟡", C: "🟠"}, kunci: "C"},
+  {no: 198, usia: "4", kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kupu-kupu?", gambar: "🦋 🦋", pilihan: {A: "3", B: "1", C: "2"}, kunci: "C"},
+  {no: 199, usia: "4", kategori: "Substitusi Kode", soal: "Lihat kodenya! Ikan itu angka berapa?", gambar: "1️⃣🌸   2️⃣🐘   3️⃣🐟 | 🐟➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "C"},
+  {no: 200, usia: "4", kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️⭐🌙❤️⭐❓", pilihan: {A: "🌙", B: "❤️", C: "⭐"}, kunci: "A"},
 ];
 // </SOAL_BAWAAN>
 
@@ -474,7 +580,7 @@ const store = {
 
 let bank = store.get('tj_bank', null) || SOAL_BAWAAN;
 const settings = Object.assign(
-  { jumlah: '10', kecepatan: 'pelan', acak: true, suara: true, kategori: null },
+  { usia: '3', jumlah: '10', kecepatan: 'pelan', acak: true, suara: true, kategori: null },
   store.get('tj_settings', {})
 );
 
@@ -826,7 +932,11 @@ function sizeBoxes() {
   L.boxW = clamp(Math.min(playW * 0.2, avail * 0.34), 62, 180);
   L.boxH = L.boxW * 0.7;
   L.canopy = L.boxW * 0.38;                      // tinggi tali parasut di atas kotak
-  L.laneX = [0, 1, 2].map(i => W / 2 + (i - 1) * playW / 3);
+  L.lanes = {                                    // posisi x kotak untuk 3 / 2 pilihan jawaban
+    3: [0, 1, 2].map(i => W / 2 + (i - 1) * playW / 3),
+    2: [W / 2 - playW * 0.2, W / 2 + playW * 0.2],
+    1: [W / 2],
+  };
   L.spawnY = -L.boxH - L.canopy - L.boxW * 0.25 - 10;   // mulai dari atas layar
   L.fallSpeed = (H - L.spawnY) / FALL_SECONDS[settings.kecepatan];
 }
@@ -859,11 +969,15 @@ function layoutQuestion(q) {
 // ---------------------------------------------------------------------
 // 8. ALUR PERMAINAN
 // ---------------------------------------------------------------------
-function categories() { return [...new Set(bank.map(q => q.kategori || 'Umum'))]; }
+// Soal tanpa kolom Usia ikut tampil di semua usia
+const cocokUsia = q => settings.usia === 'semua' || !q.usia || String(q.usia) === settings.usia;
+const poolUsia = () => bank.filter(cocokUsia);
+function categories() { return [...new Set(poolUsia().map(q => q.kategori || 'Umum'))]; }
+const opsiJawaban = q => ['A', 'B', 'C'].filter(k => String(q.pilihan?.[k] ?? '').trim() !== '');
 
 function buildSession() {
   const cats = settings.kategori;
-  let pool = bank.filter(q => cats.includes(q.kategori || 'Umum'));
+  let pool = poolUsia().filter(q => cats.includes(q.kategori || 'Umum'));
   if (settings.acak) pool = shuffle([...pool]);
   const n = settings.jumlah === 'semua' ? pool.length : Math.min(Number(settings.jumlah), pool.length);
   return pool.slice(0, n);
@@ -899,10 +1013,11 @@ function loadQuestion(i) {
   qIndex = i;
   const q = session[i];
   layoutQuestion(q);
-  boxes = ['A', 'B', 'C'].map((key, lane) => ({
+  const keys = opsiJawaban(q);                   // 2 atau 3 pilihan
+  boxes = keys.map((key, lane) => ({
     key, lane, text: q.pilihan[key],
     y: L.spawnY - Math.random() * L.boxH * 0.9,
-    cx: L.laneX[lane], dwell: 0, hover: false, hoverAnim: 0,
+    cx: L.lanes[keys.length][lane], dwell: 0, hover: false, hoverAnim: 0,
     phase: Math.random() * Math.PI * 2, pop: 0, shake: 0, fit: null, fitW: 0,
   }));
   feedback = null; prevHovered = null;
@@ -1007,13 +1122,13 @@ function draw(now) {
   ctx.clearRect(0, 0, W, H);
   if (state !== 'playing' && state !== 'feedback') return;
   const t = now / 1000;
+  if (state === 'playing' && cameraOn && trackerReady() && now - noHandSince > 1800) drawHint(t);  // di belakang kotak
   for (const b of boxes) drawBox(b, t);
   drawPanel();
   drawParticles();
   if (feedback) drawFeedbackBanner(t);
   drawHand();
   drawCursor();
-  if (state === 'playing' && cameraOn && trackerReady() && now - noHandSince > 1800) drawHint(t);
 }
 
 function drawPanel() {
@@ -1051,7 +1166,7 @@ function drawPanel() {
 }
 
 function drawBox(b, t) {
-  const w = L.boxW, h = L.boxH, color = LANE_COLORS[b.lane];
+  const w = L.boxW, h = L.boxH, color = LANE_COLORS['ABC'.indexOf(b.key)];
   const p = clamp(b.dwell / DWELL_TIME, 0, 1);
   const fb = feedback;
   let alpha = 1;
@@ -1059,7 +1174,7 @@ function drawBox(b, t) {
 
   // posisi x bergoyang lembut, berhenti saat ditunjuk
   const sway = Math.sin(t * 1.5 + b.phase) * 7 * (1 - b.hoverAnim) * (fb ? 0 : 1);
-  b.cx = L.laneX[b.lane] + sway + (b.shake ? Math.sin(t * 50) * 12 * b.shake : 0);
+  b.cx = L.lanes[boxes.length][b.lane] + sway + (b.shake ? Math.sin(t * 50) * 12 * b.shake : 0);
   const cy = b.y + h / 2;
   const scale = 1 + 0.08 * b.hoverAnim + 0.18 * Math.sin(b.pop * Math.PI);
 
@@ -1278,10 +1393,12 @@ function exportRekap() {
 }
 
 // ---------------------------------------------------------------------
-// 13. IMPORT SOAL (Excel .xlsx / .csv) — kolom: No, Kategori, Soal, Gambar, Pilihan_A, Pilihan_B, Pilihan_C, Kunci
+// 13. IMPORT SOAL (Excel .xlsx / .csv)
+//     kolom: No, Usia, Kategori, Soal, Gambar, Pilihan_A, Pilihan_B, Pilihan_C (boleh kosong), Kunci
 // ---------------------------------------------------------------------
 const HEADER_MAP = {
   no: 'no', nomor: 'no',
+  usia: 'usia', umur: 'usia', level: 'usia',
   kategori: 'kategori', jenis: 'kategori', category: 'kategori',
   soal: 'soal', pertanyaan: 'soal', question: 'soal',
   gambar: 'gambar', emoji: 'gambar', visual: 'gambar',
@@ -1300,14 +1417,16 @@ function rowsToQuestions(rows) {
     const line = i + 2;
     if (!r.soal && !r.gambar && !r.A && !r.B && !r.C) return;                        // baris kosong
     if (!r.soal && !r.gambar) { errors.push(`Baris ${line}: Soal kosong`); return; }
-    if (!r.A || !r.B || !r.C) { errors.push(`Baris ${line}: Pilihan A, B, C wajib diisi`); return; }
+    if (!r.A || !r.B) { errors.push(`Baris ${line}: Pilihan A dan B wajib diisi`); return; }
+    const valid = r.C ? ['A', 'B', 'C'] : ['A', 'B'];
     let k = (r.kunci || '').toUpperCase();
-    if (!['A', 'B', 'C'].includes(k)) {
-      const m = ['A', 'B', 'C'].find(x => r[x] === r.kunci);
-      if (!m) { errors.push(`Baris ${line}: Kunci harus A, B, atau C`); return; }
+    if (!valid.includes(k)) {
+      const m = valid.find(x => r[x] === r.kunci);
+      if (!m) { errors.push(`Baris ${line}: Kunci harus ${valid.join('/')}`); return; }
       k = m;
     }
-    out.push({ no: 0, kategori: r.kategori || 'Umum', soal: r.soal || '', gambar: r.gambar || '', pilihan: { A: r.A, B: r.B, C: r.C }, kunci: k });
+    const usia = (String(r.usia || '').match(/\d+/) || [''])[0];
+    out.push({ no: 0, usia, kategori: r.kategori || 'Umum', soal: r.soal || '', gambar: r.gambar || '', pilihan: { A: r.A, B: r.B, C: r.C || '' }, kunci: k });
   });
   return { out, errors };
 }
@@ -1345,11 +1464,15 @@ function renderMenu() {
   if (!settings.kategori.length) settings.kategori = [...cats];
 
   const isDefault = bank === SOAL_BAWAAN;
-  $('#bankInfo').innerHTML = `📚 ${bank.length} soal ${isDefault ? 'bawaan' : 'aktif'}<small>${isDefault ? 'Import file Excel untuk menambah soal sendiri.' : 'Soal hasil import tersimpan di browser ini.'}</small>`;
+  const nUsia = u => bank.filter(q => String(q.usia) === u).length;
+  const rincian = [nUsia('3') && `${nUsia('3')} usia 3`, nUsia('4') && `${nUsia('4')} usia 4`].filter(Boolean).join(', ');
+  $('#bankInfo').innerHTML = `📚 ${bank.length} soal ${isDefault ? 'bawaan' : 'aktif'}${rincian ? ` (${rincian})` : ''}<small>${isDefault ? 'Import file Excel untuk menambah soal sendiri.' : 'Soal hasil import tersimpan di browser ini.'}</small>`;
   $('#btnReset').hidden = isDefault;
+  document.querySelectorAll('#segUsia button').forEach(b => b.classList.toggle('on', b.dataset.v === settings.usia));
 
+  const pool = poolUsia();
   $('#chipsKategori').innerHTML = cats.map(c => {
-    const n = bank.filter(q => (q.kategori || 'Umum') === c).length;
+    const n = pool.filter(q => (q.kategori || 'Umum') === c).length;
     return `<button data-v="${escapeHtml(c)}" class="${settings.kategori.includes(c) ? 'on' : ''}">${ikon(c)} ${escapeHtml(c)} (${n})</button>`;
   }).join('');
   document.querySelectorAll('#segJumlah button').forEach(b => b.classList.toggle('on', b.dataset.v === String(settings.jumlah)));
@@ -1361,6 +1484,7 @@ function renderMenu() {
   saveSettings();
 }
 
+$('#segUsia').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.usia = b.dataset.v; renderMenu(); });
 $('#segJumlah').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.jumlah = b.dataset.v; renderMenu(); });
 $('#segSpeed').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.kecepatan = b.dataset.v; renderMenu(); });
 $('#chipsKategori').addEventListener('click', e => {
@@ -1381,7 +1505,7 @@ $('#btnTestVoice').addEventListener('click', () => {
 });
 $('#fileImport').addEventListener('change', e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ''; });
 $('#btnReset').addEventListener('click', () => {
-  if (!confirm('Hapus soal hasil import dan kembali ke 100 soal bawaan?')) return;
+  if (!confirm('Hapus soal hasil import dan kembali ke soal bawaan?')) return;
   bank = SOAL_BAWAAN; store.del('tj_bank'); settings.kategori = null; renderMenu(); toast('↩️ Kembali ke soal bawaan.');
 });
 $('#btnStart').addEventListener('click', () => startGame(true));

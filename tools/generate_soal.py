@@ -44,7 +44,9 @@ def acak_pilihan(benar, salah):
     """Kembalikan (pilihan dict, kunci) dengan posisi jawaban benar diacak."""
     opsi = [benar] + list(salah)
     rng.shuffle(opsi)
-    return dict(zip(KEYS, opsi)), KEYS[opsi.index(benar)]
+    pilihan = {k: "" for k in KEYS}                  # soal 2 pilihan: Pilihan_C kosong
+    pilihan.update(zip(KEYS, opsi))
+    return pilihan, KEYS[opsi.index(benar)]
 
 
 def soal(kategori, teks, gambar, benar, salah):
@@ -137,22 +139,117 @@ def reproduksi_pola():
     return out
 
 
-def main():
-    groups = [enkoding_substitusi(), enkoding_kombinasi(), enumerasi_piktografik(),
-              substitusi_kode(), reproduksi_pola()]
+# =====================================================================
+# USIA 3 TAHUN — lebih sederhana: 60% soal hanya 2 pilihan, angka 1-3,
+# kunci 1 pasang, pola AB saja, kalimat lebih ramah.
+# =====================================================================
+def jumlah_opsi(i):
+    return 2 if i % 5 < 3 else 3                    # 12 soal 2 pilihan, 8 soal 3 pilihan per kategori
+
+
+def substitusi_3():
+    out = []
+    for i in range(20):
+        nama_e, nama = rng.choice(BENDA)
+        s = rng.sample(SIMBOL, 3)
+        out.append(soal("Enkoding Substitusi", f"Lihat gambarnya! Kalau {nama}, jadi apa ya?",
+                        f"{nama_e}➡️{s[0]} | {nama_e}➡️❓", s[0], s[1:jumlah_opsi(i)]))
+    return out
+
+
+WARNA_BENDA = [
+    ("🍎", "apel", "🔴"), ("🍓", "stroberi", "🔴"), ("🍌", "pisang", "🟡"), ("🌻", "bunga matahari", "🟡"),
+    ("🐸", "katak", "🟢"), ("🥦", "brokoli", "🟢"), ("🍊", "jeruk", "🟠"), ("🥕", "wortel", "🟠"),
+    ("🍇", "anggur", "🟣"), ("🍆", "terong", "🟣"), ("🐳", "paus", "🔵"), ("💧", "air", "🔵"),
+    ("🍫", "cokelat", "🟤"), ("🐘", "gajah", "⚪"),
+]
+BENTUK_SAMA = [("⭐", "bintang"), ("❤️", "hati"), ("🔺", "segitiga"), ("⚪", "lingkaran"), ("🟦", "kotak"), ("🌙", "bulan")]
+
+
+def kombinasi_3():
+    out = []
+    benda = WARNA_BENDA[:]
+    rng.shuffle(benda)
+    semua_warna = sorted({w for _, _, w in WARNA_BENDA})
+    for i in range(20):
+        if i < 14:      # cocokkan warna benda
+            e, nama, w = benda[i]
+            salah = rng.sample([x for x in semua_warna if x != w], jumlah_opsi(i) - 1)
+            out.append(soal("Enkoding Kombinasi", f"{nama.capitalize()} warnanya apa? Cari warna yang sama!",
+                            f"{e} ➡️ 🎨❓", w, salah))
+        else:           # cari bentuk yang sama
+            e, nama = BENTUK_SAMA[i - 14]
+            salah = rng.sample([x for x, _ in BENTUK_SAMA if x != e], jumlah_opsi(i) - 1)
+            out.append(soal("Enkoding Kombinasi", f"Cari yang sama! Mana {nama}?", f"{e} ➡️ ❓", e, salah))
+    rng.shuffle(out)
+    return out
+
+
+def enumerasi_3():
+    out = []
+    jumlah = ([1, 2, 3] * 7)[:20]
+    rng.shuffle(jumlah)
+    benda = rng.sample(BENDA, 20)
+    label = lambda n: f"{n} " + "●" * n               # angka + titik bantu hitung
+    for i, (n, (e, nama)) in enumerate(zip(jumlah, benda)):
+        salah = rng.sample([x for x in (1, 2, 3) if x != n], jumlah_opsi(i) - 1)
+        out.append(soal("Enumerasi Piktografik", f"Ayo hitung bersama! Ada berapa {nama}?",
+                        " ".join([e] * n), label(n), [label(s) for s in salah]))
+    return out
+
+
+def kode_3():
+    out = []
+    for i in range(20):
+        k = jumlah_opsi(i)                            # kunci 2 atau 3 angka
+        benda = rng.sample(BENDA, k)
+        kode = "   ".join(f"{KEYCAP[j + 1]}{b[0]}" for j, b in enumerate(benda))
+        t = rng.randrange(k)
+        out.append(soal("Substitusi Kode", f"Angka {ANGKA[t + 1]} itu gambar apa ya?",
+                        f"{kode} | {KEYCAP[t + 1]}➡️❓", benda[t][0],
+                        [b[0] for j, b in enumerate(benda) if j != t]))
+    return out
+
+
+def pola_3():
+    out = []
+    pools = [["🐱", "🐶", "🐰", "🐸"], ["🍎", "🍌", "🍇", "🍓"], ["🔴", "🔵", "🟡", "🟢"],
+             ["⭐", "🌙", "☀️", "❤️"], ["🚗", "🎈", "⚽", "🌸"]]
+    for i in range(20):
+        a, b, c = rng.sample(pools[i % len(pools)], 3)
+        seq = [a, b] * 3                              # a b a b a ?
+        tampil, benar = seq[:5], seq[5]
+        salah = [a] if jumlah_opsi(i) == 2 else [a, c]
+        out.append(soal("Reproduksi Pola Sekuensial", "Lihat polanya! Habis ini apa ya?",
+                        "".join(tampil) + "❓", benar, salah))
+    return out
+
+
+def susun(groups, usia):
     # Susun bergiliran antar kategori agar mode "berurutan" tetap bervariasi
     bank = [g[i] for i in range(20) for g in groups]
+    for q in bank:
+        q["usia"] = usia
+        isi = [v for v in q["pilihan"].values() if v]
+        assert len(set(isi)) == len(isi) >= 2, q
+    return bank
+
+
+def main():
+    bank4 = susun([enkoding_substitusi(), enkoding_kombinasi(), enumerasi_piktografik(),
+                   substitusi_kode(), reproduksi_pola()], "4")
+    bank3 = susun([substitusi_3(), kombinasi_3(), enumerasi_3(), kode_3(), pola_3()], "3")
+    bank = bank3 + bank4
     for i, q in enumerate(bank, 1):
         q["no"] = i
-        assert len(set(q["pilihan"].values())) == 3, q
 
     # --- sisipkan ke index.html ---
     lines = []
     for q in bank:
-        obj = {"no": q["no"], "kategori": q["kategori"], "soal": q["soal"], "gambar": q["gambar"],
+        obj = {"no": q["no"], "usia": q["usia"], "kategori": q["kategori"], "soal": q["soal"], "gambar": q["gambar"],
                "pilihan": q["pilihan"], "kunci": q["kunci"]}
         js = json.dumps(obj, ensure_ascii=False)
-        js = re.sub(r'"(no|kategori|soal|gambar|pilihan|kunci|A|B|C)":', r"\1:", js)
+        js = re.sub(r'"(no|usia|kategori|soal|gambar|pilihan|kunci|A|B|C)":', r"\1:", js)
         lines.append("  " + js)
     block = "// <SOAL_BAWAAN>\nconst SOAL_BAWAAN = [\n" + ",\n".join(lines) + ",\n];\n// </SOAL_BAWAAN>"
     html_path = ROOT / "index.html"
@@ -165,27 +262,32 @@ def main():
     wb = Workbook()
     ws = wb.active
     ws.title = "Soal"
-    header = ["No", "Kategori", "Soal", "Gambar", "Pilihan_A", "Pilihan_B", "Pilihan_C", "Kunci"]
+    header = ["No", "Usia", "Kategori", "Soal", "Gambar", "Pilihan_A", "Pilihan_B", "Pilihan_C", "Kunci"]
     ws.append(header)
     for q in bank:
         p = q["pilihan"]
-        ws.append([q["no"], q["kategori"], q["soal"], q["gambar"], p["A"], p["B"], p["C"], q["kunci"]])
+        ws.append([q["no"], int(q["usia"]), q["kategori"], q["soal"], q["gambar"], p["A"], p["B"], p["C"], q["kunci"]])
     fill = PatternFill("solid", fgColor="8B5CF6")
     for c in ws[1]:
         c.font = Font(bold=True, color="FFFFFF")
         c.fill = fill
         c.alignment = Alignment(horizontal="center", vertical="center")
-    for col, w in zip("ABCDEFGH", [6, 26, 48, 46, 14, 14, 14, 8]):
+    for col, w in zip("ABCDEFGHI", [6, 7, 26, 48, 46, 14, 14, 14, 8]):
         ws.column_dimensions[col].width = w
     for row in ws.iter_rows(min_row=2):
         for c in row:
             c.alignment = Alignment(vertical="center", wrap_text=True)
-        row[0].alignment = row[7].alignment = Alignment(horizontal="center", vertical="center")
+        for idx in (0, 1, 8):
+            row[idx].alignment = Alignment(horizontal="center", vertical="center")
     ws.freeze_panes = "A2"
     dv = DataValidation(type="list", formula1='"A,B,C"', allow_blank=False,
                         error="Kunci harus A, B, atau C", errorTitle="Kunci tidak valid")
     ws.add_data_validation(dv)
-    dv.add("H2:H2000")
+    dv.add("I2:I2000")
+    dv_usia = DataValidation(type="list", formula1='"3,4"', allow_blank=True,
+                             error="Usia diisi 3 atau 4 (kosong = semua usia)", errorTitle="Usia tidak valid")
+    ws.add_data_validation(dv_usia)
+    dv_usia.add("B2:B2000")
 
     info = wb.create_sheet("Petunjuk")
     petunjuk = [
@@ -193,15 +295,17 @@ def main():
         [""],
         ["Kolom", "Wajib?", "Keterangan"],
         ["No", "Tidak", "Nomor urut (boleh dikosongkan, game akan menomori ulang)."],
+        ["Usia", "Tidak", "Usia anak: 3 atau 4. Menu 'Usia anak' di game memilih soal sesuai usia ini. Kosong = tampil di semua usia."],
         ["Kategori", "Tidak", "Jenis permainan. Kategori baru otomatis muncul sebagai pilihan di menu. Kosong = 'Umum'."],
         ["Soal", "Ya", "Kalimat pendek. Teks ini ditampilkan DAN dibacakan oleh suara, jadi tulis dengan kata (bukan emoji)."],
         ["Gambar", "Tidak", "Emoji/simbol yang ditampilkan besar di bawah soal. Pakai tanda | untuk pindah baris. Contoh: 🍎➡️⭐  🍌➡️🔵 | 🍎➡️❓"],
-        ["Pilihan_A / B / C", "Ya", "Isi 3 pilihan jawaban. Boleh emoji (🍎), angka (3), atau kata pendek (Jakarta)."],
-        ["Kunci", "Ya", "Huruf jawaban yang benar: A, B, atau C."],
+        ["Pilihan_A / B", "Ya", "Pilihan jawaban. Boleh emoji (🍎), angka (3), atau kata pendek (Jakarta)."],
+        ["Pilihan_C", "Tidak", "Pilihan ketiga. KOSONGKAN untuk soal 2 pilihan saja (cocok untuk usia 3 tahun)."],
+        ["Kunci", "Ya", "Huruf jawaban yang benar: A, B, atau C (C hanya jika Pilihan_C diisi)."],
         [""],
         ["Cara import:", "", "Buka game → bagian 'Bank soal' → pilih 'Tambahkan' atau 'Ganti semua' → klik 📥 Import Soal → pilih file ini."],
         ["Catatan:", "", "Data diambil dari sheet bernama 'Soal' (atau sheet pertama). Baris kosong dilewati. File .csv (UTF-8) juga bisa."],
-        ["", "", "Soal hasil import tersimpan di browser yang dipakai. Tombol '↩️ Pakai soal bawaan' mengembalikan 100 soal awal."],
+        ["", "", "Soal hasil import tersimpan di browser yang dipakai. Tombol '↩️ Pakai soal bawaan' mengembalikan 200 soal awal (100 usia 3 + 100 usia 4)."],
     ]
     for r in petunjuk:
         info.append(r)
@@ -209,7 +313,7 @@ def main():
     for c in info[3]:
         c.font = Font(bold=True, color="FFFFFF")
         c.fill = fill
-    for r in (11, 12):
+    for r in (13, 14):
         info.cell(row=r, column=1).font = Font(bold=True)
     info.column_dimensions["A"].width = 20
     info.column_dimensions["B"].width = 9
@@ -221,8 +325,10 @@ def main():
     wb.save(ROOT / "template_soal.xlsx")
     counts = {}
     for q in bank:
-        counts[q["kategori"]] = counts.get(q["kategori"], 0) + 1
+        key = f'{q["usia"]}th {q["kategori"]}'
+        counts[key] = counts.get(key, 0) + 1
     print(f"{len(bank)} soal ->", counts)
+    print("2 pilihan:", sum(not q["pilihan"]["C"] for q in bank))
     print("kunci:", {k: sum(q['kunci'] == k for q in bank) for k in KEYS})
 
 
