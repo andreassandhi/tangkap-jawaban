@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tangkap Jawaban!</title>
+<meta name="description" content="Game edukasi anak: tangkap jawaban yang jatuh dengan jari telunjuk lewat kamera.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- SheetJS: untuk import soal dari Excel/CSV dan unduh rekap -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<style>
+  :root {
+    --ink: #3b2a5a;
+    --ink-soft: #6b5a8a;
+    --yellow: #ffd23f;
+    --pink: #ff6fae;
+    --blue: #4cc9f0;
+    --orange: #ff9f1c;
+    --green: #22c55e;
+    --green-dark: #15803d;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --card: #ffffff;
+    --font: "Fredoka", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 120px 50px at 15% 18%, #fff 60%, transparent 62%),
+      radial-gradient(ellipse 160px 60px at 80% 12%, #fff 60%, transparent 62%),
+      radial-gradient(ellipse 140px 55px at 60% 85%, #ffffffcc 60%, transparent 62%),
+      linear-gradient(180deg, #a9e4ff 0%, #d9f2ff 45%, #ffe1f0 100%);
+    -webkit-user-select: none; user-select: none;
+  }
+
+  /* ---------- Kamera & canvas ---------- */
+  #cam {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1);   /* efek cermin */
+    opacity: .5; z-index: 0; pointer-events: none;
+  }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; touch-action: none; }
+
+  /* ---------- Overlay umum ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: flex-start; justify-content: center;
+    overflow-y: auto; padding: 24px 16px;
+    background: rgba(255, 240, 250, .55);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .overlay[hidden] { display: none; }
+  .card {
+    width: 100%; max-width: 780px; margin: auto;
+    background: var(--card); border-radius: 32px;
+    border: 6px solid var(--yellow);
+    box-shadow: 0 14px 0 #f5b700, 0 24px 50px rgba(59, 42, 90, .25);
+    padding: 24px clamp(16px, 4vw, 36px) 28px;
+  }
+
+  /* ---------- Menu ---------- */
+  .hero { text-align: center; }
+  .mascot { font-size: clamp(64px, 14vw, 104px); line-height: 1; display: inline-block; animation: bounce 1.6s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-14px) rotate(4deg); } }
+  h1.title { margin: 6px 0 4px; font-size: clamp(36px, 8vw, 62px); font-weight: 700; letter-spacing: .5px; line-height: 1.05; }
+  h1.title span:nth-child(1) { color: var(--pink); }
+  h1.title span:nth-child(2) { color: var(--purple); }
+  h1.title span:nth-child(3) { color: var(--orange); }
+  .subtitle { margin: 6px auto 0; max-width: 560px; font-size: clamp(16px, 2.6vw, 20px); color: var(--ink-soft); }
+  .how { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 16px 0 6px; }
+  .how div { background: #fff7d6; border: 3px dashed var(--yellow); border-radius: 18px; padding: 8px 12px; font-size: 15px; font-weight: 500; }
+  .how b { font-size: 22px; display: block; text-align: center; }
+
+  .settings { margin-top: 18px; display: grid; gap: 14px; }
+  .row { display: grid; gap: 6px; }
+  .row > label, .row > .lbl { font-weight: 600; font-size: 15px; color: var(--ink-soft); }
+  .seg, .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button, .chips button, .toggle {
+    font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
+    background: #f3eefc; border: 3px solid #e3d8fa; border-radius: 999px;
+    padding: 8px 14px; cursor: pointer; transition: transform .1s, background .15s;
+  }
+  .seg button:hover, .chips button:hover, .toggle:hover { transform: translateY(-2px); }
+  .seg button.on { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .chips button.on { background: #ffe9f3; border-color: var(--pink); }
+  .chips button:not(.on) { opacity: .55; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggle.on { background: #dcfce7; border-color: var(--green); }
+
+  .bank {
+    margin-top: 4px; padding: 12px 14px; border-radius: 20px;
+    background: #eef9ff; border: 3px solid #bfe8fb;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  }
+  .bank .info { flex: 1 1 220px; font-weight: 600; }
+  .bank .info small { display: block; font-weight: 400; color: var(--ink-soft); }
+  .btn-sm {
+    font-family: inherit; font-size: 14px; font-weight: 600; text-decoration: none;
+    color: var(--ink); background: #fff; border: 3px solid #bfe8fb; border-radius: 14px;
+    padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-sm:hover { background: #f6fcff; }
+  .bank select { font-family: inherit; font-size: 14px; border-radius: 12px; border: 3px solid #bfe8fb; padding: 6px 8px; color: var(--ink); background: #fff; }
+
+  .actions { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-play {
+    font-family: inherit; font-size: clamp(24px, 5vw, 32px); font-weight: 700; color: #fff;
+    background: var(--green); border: none; border-radius: 999px; padding: 14px 44px;
+    box-shadow: 0 8px 0 var(--green-dark); cursor: pointer; transition: transform .1s, box-shadow .1s;
+  }
+  .btn-play:hover { transform: translateY(-2px); }
+  .btn-play:active { transform: translateY(6px); box-shadow: 0 2px 0 var(--green-dark); }
+  .btn-link { font-family: inherit; background: none; border: none; color: var(--ink-soft); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .note { font-size: 13px; color: var(--ink-soft); text-align: center; margin: 4px 0 0; }
+
+  /* ---------- Loading ---------- */
+  .loading { text-align: center; max-width: 420px; }
+  .spin { font-size: 72px; display: inline-block; animation: wobble 1s ease-in-out infinite; }
+  @keyframes wobble { 0%,100% { transform: rotate(-12deg) scale(1); } 50% { transform: rotate(12deg) scale(1.1); } }
+
+  /* ---------- HUD saat bermain ---------- */
+  #hud {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 8px;
+    padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    pointer-events: none;
+  }
+  #hud[hidden] { display: none; }
+  #hud .group { display: flex; gap: 8px; }
+  .pill {
+    pointer-events: auto; font-family: inherit; font-size: 17px; font-weight: 700; color: var(--ink);
+    background: rgba(255, 255, 255, .9); border: 3px solid var(--yellow); border-radius: 999px; padding: 6px 14px;
+  }
+  button.pill { cursor: pointer; }
+  button.pill:hover { background: #fff; }
+
+  /* ---------- Hasil ---------- */
+  .result-head { text-align: center; }
+  .trophy { font-size: 80px; line-height: 1; display: inline-block; animation: bounce 1.4s ease-in-out infinite; }
+  .score-label { margin: 6px 0 0; font-size: 18px; font-weight: 600; color: var(--ink-soft); }
+  .score-big { font-size: clamp(54px, 12vw, 84px); font-weight: 700; color: var(--purple); line-height: 1.05; }
+  .stars { font-size: 40px; letter-spacing: 6px; }
+  .stars .dim { filter: grayscale(1); opacity: .3; }
+  .msg { font-size: 20px; font-weight: 600; margin: 4px 0 0; }
+  .cat-sum { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 12px 0 4px; }
+  .cat-sum span { background: #f3eefc; border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 600; }
+  .table-wrap { margin-top: 14px; max-height: 46vh; overflow: auto; border-radius: 18px; border: 3px solid #e3d8fa; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { padding: 8px 10px; text-align: left; vertical-align: middle; }
+  th { position: sticky; top: 0; background: var(--purple); color: #fff; font-weight: 600; z-index: 1; white-space: nowrap; }
+  tbody tr:nth-child(even) { background: #faf7ff; }
+  td.no { text-align: center; font-weight: 700; width: 44px; }
+  td .q { font-weight: 600; }
+  td .g { font-size: 20px; margin-top: 2px; }
+  td .ans { font-size: 20px; }
+  .tag { display: inline-block; border-radius: 999px; padding: 3px 10px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+  .tag.ok { background: #dcfce7; color: var(--green-dark); }
+  .tag.no { background: #fee2e2; color: #b91c1c; }
+  .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
+  .result-actions .btn-play { font-size: 24px; padding: 12px 30px; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; left: 50%; top: 18px; transform: translateX(-50%) translateY(-140%);
+    z-index: 50; max-width: min(92vw, 560px);
+    background: var(--ink); color: #fff; border-radius: 18px; padding: 12px 18px;
+    font-size: 15px; font-weight: 500; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    transition: transform .3s ease; white-space: pre-line;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 520px) {
+    .card { border-radius: 24px; border-width: 5px; }
+    .how div { font-size: 13px; }
+    table { font-size: 13px; }
+    th, td { padding: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="game"></canvas>
+
+<!-- ============ MENU AWAL ============ -->
+<section id="menu" class="overlay">
+  <div class="card">
+    <div class="hero">
+      <div class="mascot">🦉</div>
+      <h1 class="title"><span>Tangkap</span> <span>Jawaban</span><span>!</span></h1>
+      <p class="subtitle">Arahkan <b>jari telunjuk</b> ☝️ ke jawaban yang jatuh, lalu <b>tahan sebentar</b> sampai kotaknya penuh!</p>
+      <div class="how">
+        <div><b>👀</b>Lihat soal</div>
+        <div><b>☝️</b>Tunjuk jawaban</div>
+        <div><b>⏳</b>Tahan 1 detik</div>
+        <div><b>⭐</b>Kumpulkan bintang</div>
+      </div>
+    </div>
+
+    <div class="settings">
+      <div class="row">
+        <span class="lbl">Jumlah soal sekali main</span>
+        <div class="seg" id="segJumlah">
+          <button data-v="5">5</button><button data-v="10">10</button><button data-v="20">20</button><button data-v="semua">Semua</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl">Kecepatan jatuh</span>
+        <div class="seg" id="segSpeed">
+          <button data-v="pelan">🐢 Pelan</button><button data-v="sedang">🐇 Sedang</button><button data-v="cepat">🚀 Cepat</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl">Jenis permainan</span>
+        <div class="chips" id="chipsKategori"></div>
+      </div>
+      <div class="row">
+        <span class="lbl">Pengaturan</span>
+        <div class="toggles">
+          <button class="toggle" id="tglAcak">🔀 Soal diacak</button>
+          <button class="toggle" id="tglSuara">🔊 Suara &amp; dibacakan</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl">Bank soal (untuk orang tua / guru)</span>
+        <div class="bank">
+          <div class="info" id="bankInfo">📚 100 soal bawaan</div>
+          <select id="importMode" title="Cara import">
+            <option value="tambah">Tambahkan ke soal yang ada</option>
+            <option value="ganti">Ganti semua soal</option>
+          </select>
+          <label class="btn-sm" for="fileImport">📥 Import Soal</label>
+          <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" hidden>
+          <a class="btn-sm" href="template_soal.xlsx" download>📄 Template Excel</a>
+          <button class="btn-sm" id="btnReset" hidden>↩️ Pakai soal bawaan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-play" id="btnStart">▶ Mulai Main!</button>
+      <button class="btn-link" id="btnMouse">🖱️ Main pakai mouse / sentuh (tanpa kamera)</button>
+      <p class="note">Kamera hanya dipakai di perangkat ini untuk mendeteksi tangan. Tidak ada video yang dikirim ke mana pun.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LOADING ============ -->
+<section id="loading" class="overlay" hidden>
+  <div class="card loading">
+    <div class="spin">📷</div>
+    <h2 id="loadingText">Menyiapkan kamera…</h2>
+    <p class="note">Izinkan akses kamera bila browser bertanya, ya!</p>
+  </div>
+</section>
+
+<!-- ============ HUD ============ -->
+<div id="hud" hidden>
+  <div class="group">
+    <span class="pill" id="hudProgress">Soal 1/10</span>
+    <span class="pill" id="hudScore">⭐ 0</span>
+  </div>
+  <div class="group">
+    <button class="pill" id="btnRepeat" title="Bacakan soal lagi">🔊 Ulangi</button>
+    <button class="pill" id="btnStop" title="Selesai dan lihat hasil">⏹ Selesai</button>
+  </div>
+</div>
+
+<!-- ============ HASIL / GAME OVER ============ -->
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <div class="result-head">
+      <div class="trophy">🏆</div>
+      <p class="score-label">Skor Akhir</p>
+      <div class="score-big" id="scoreBig">0 / 0</div>
+      <div class="stars" id="stars"></div>
+      <p class="msg" id="resultMsg"></p>
+      <div class="cat-sum" id="catSum"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>No</th><th>Pertanyaan</th><th>Jawaban Terpilih</th><th>Kunci Jawaban</th><th>Hasil</th></tr></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+    <div class="result-actions">
+      <button class="btn-play" id="btnAgain">🔁 Main Lagi</button>
+      <button class="btn-sm" id="btnMenu">🏠 Menu</button>
+      <button class="btn-sm" id="btnExport">💾 Unduh Rekap (Excel)</button>
+    </div>
+  </div>
+</section>
+
+<div id="toast"></div>
+
+<script type="module">
+/* =====================================================================
+   TANGKAP JAWABAN! — game edukasi anak dengan hand tracking (MediaPipe)
+   ===================================================================== */
+
+// ---------------------------------------------------------------------
+// 1. BANK SOAL BAWAAN (100 soal, dibuat oleh tools/generate_soal.py)
+//    Format: { no, kategori, soal, gambar, pilihan:{A,B,C}, kunci }
+//    - soal   : kalimat pendek yang ditampilkan & dibacakan
+//    - gambar : baris emoji, pisahkan baris dengan tanda |
+// ---------------------------------------------------------------------
+// <SOAL_BAWAAN>
+const SOAL_BAWAAN = [
+  {no: 1, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bebek jadi apa?", gambar: "🍓➡️❤️   🦆➡️🟣 | 🦆➡️❓", pilihan: {A: "🟣", B: "❤️", C: "🟩"}, kunci: "A"},
+  {no: 2, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk lingkaran. Mana lingkaran merah?", gambar: "🍎 ➕ ⚪ ➡️ ❓", pilihan: {A: "❤️", B: "🟠", C: "🔴"}, kunci: "C"},
+  {no: 3, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa pisang?", gambar: "🍌 🍌 🍌", pilihan: {A: "5", B: "3", C: "2"}, kunci: "B"},
+  {no: 4, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka tiga itu gambar apa?", gambar: "1️⃣🐔   2️⃣🐸   3️⃣🐰 | 3️⃣➡️❓", pilihan: {A: "🐰", B: "🐸", C: "🐔"}, kunci: "A"},
+  {no: 5, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍓🍇🍓🍇🍓🍇❓", pilihan: {A: "🍓", B: "🍎", C: "🍇"}, kunci: "A"},
+  {no: 6, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kupu-kupu jadi apa?", gambar: "🦋➡️🔺   ⚽➡️⭐ | 🦋➡️❓", pilihan: {A: "🟩", B: "⭐", C: "🔺"}, kunci: "C"},
+  {no: 7, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk lingkaran. Mana lingkaran oranye?", gambar: "🍊 ➕ ⚪ ➡️ ❓", pilihan: {A: "🧡", B: "🔴", C: "🟠"}, kunci: "C"},
+  {no: 8, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa stroberi?", gambar: "🍓", pilihan: {A: "1", B: "2", C: "3"}, kunci: "A"},
+  {no: 9, kategori: "Substitusi Kode", soal: "Lihat kodenya! Katak itu angka berapa?", gambar: "1️⃣🐶   2️⃣🐸   3️⃣🦋 | 🐸➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "A"},
+  {no: 10, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️🌙❤️🌙❤️❓", pilihan: {A: "🌙", B: "☀️", C: "❤️"}, kunci: "A"},
+  {no: 11, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bola jadi apa?", gambar: "🍓➡️⭐   ⚽➡️☀️ | ⚽➡️❓", pilihan: {A: "☀️", B: "⭐", C: "🌙"}, kunci: "A"},
+  {no: 12, kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk hati. Mana hati biru?", gambar: "🐳 ➕ 🤍 ➡️ ❓", pilihan: {A: "🧡", B: "🔵", C: "💙"}, kunci: "C"},
+  {no: 13, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kelinci?", gambar: "🐰 🐰 🐰", pilihan: {A: "3", B: "4", C: "1"}, kunci: "A"},
+  {no: 14, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka satu itu gambar apa?", gambar: "1️⃣🍦   2️⃣🌸   3️⃣🐘 | 1️⃣➡️❓", pilihan: {A: "🐘", B: "🌸", C: "🍦"}, kunci: "C"},
+  {no: 15, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️🌙❤️🌙❤️❓", pilihan: {A: "☀️", B: "🌙", C: "❤️"}, kunci: "B"},
+  {no: 16, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ayam jadi apa?", gambar: "🐶➡️🟩   🐔➡️🔵 | 🐔➡️❓", pilihan: {A: "🟩", B: "🔵", C: "☀️"}, kunci: "B"},
+  {no: 17, kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk lingkaran. Mana lingkaran kuning?", gambar: "🍌 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟨", B: "🟡", C: "🟣"}, kunci: "B"},
+  {no: 18, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa apel?", gambar: "🍎 🍎 🍎 🍎", pilihan: {A: "4", B: "2", C: "3"}, kunci: "A"},
+  {no: 19, kategori: "Substitusi Kode", soal: "Lihat kodenya! Bunga itu angka berapa?", gambar: "1️⃣🍊   2️⃣🌸   3️⃣🍎 | 🌸➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "A"},
+  {no: 20, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍇🍌🍇🍌🍇🍌❓", pilihan: {A: "🍎", B: "🍌", C: "🍇"}, kunci: "C"},
+  {no: 21, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bebek jadi apa?", gambar: "🦆➡️🟩   🍇➡️🔵 | 🦆➡️❓", pilihan: {A: "🟩", B: "🔵", C: "🔺"}, kunci: "A"},
+  {no: 22, kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk kotak. Mana kotak ungu?", gambar: "🍇 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟣", B: "🟧", C: "🟪"}, kunci: "C"},
+  {no: 23, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa gajah?", gambar: "🐘 🐘 🐘", pilihan: {A: "5", B: "4", C: "3"}, kunci: "C"},
+  {no: 24, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🍌   2️⃣🐱   3️⃣🍇 | 2️⃣➡️❓", pilihan: {A: "🐱", B: "🍇", C: "🍌"}, kunci: "A"},
+  {no: 25, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⭐🌙⭐🌙⭐🌙❓", pilihan: {A: "❤️", B: "⭐", C: "🌙"}, kunci: "B"},
+  {no: 26, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Apel jadi apa?", gambar: "🍎➡️🌙   🐸➡️🔺 | 🍎➡️❓", pilihan: {A: "🌙", B: "☀️", C: "🔺"}, kunci: "A"},
+  {no: 27, kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk lingkaran. Mana lingkaran hijau?", gambar: "🐸 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟢", B: "🟡", C: "🟩"}, kunci: "A"},
+  {no: 28, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kura-kura?", gambar: "🐢 🐢", pilihan: {A: "3", B: "2", C: "4"}, kunci: "B"},
+  {no: 29, kategori: "Substitusi Kode", soal: "Lihat kodenya! Apel itu angka berapa?", gambar: "1️⃣🍊   2️⃣🍓   3️⃣🍎 | 🍎➡️❓", pilihan: {A: "2️⃣", B: "1️⃣", C: "3️⃣"}, kunci: "C"},
+  {no: 30, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🎈🌸🎈🌸🎈❓", pilihan: {A: "🌸", B: "🎈", C: "🚗"}, kunci: "A"},
+  {no: 31, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Mobil jadi apa?", gambar: "🍓➡️🟣   🚗➡️🔺 | 🚗➡️❓", pilihan: {A: "🔺", B: "🟩", C: "🟣"}, kunci: "A"},
+  {no: 32, kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk kotak. Mana kotak kuning?", gambar: "🍌 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟧", B: "🟨", C: "💛"}, kunci: "B"},
+  {no: 33, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bola?", gambar: "⚽", pilihan: {A: "3", B: "1", C: "2"}, kunci: "B"},
+  {no: 34, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🦋   2️⃣🍌   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🦋", B: "🍌", C: "🐔"}, kunci: "B"},
+  {no: 35, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽🌸⚽🌸⚽❓", pilihan: {A: "🚗", B: "🌸", C: "⚽"}, kunci: "B"},
+  {no: 36, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "🎈➡️⭐   🐢➡️🟩 | 🎈➡️❓", pilihan: {A: "🟩", B: "❤️", C: "⭐"}, kunci: "C"},
+  {no: 37, kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk hati. Mana hati hijau?", gambar: "🐸 ➕ 🤍 ➡️ ❓", pilihan: {A: "💙", B: "🟩", C: "💚"}, kunci: "C"},
+  {no: 38, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bebek?", gambar: "🦆 🦆 🦆 🦆", pilihan: {A: "2", B: "4", C: "6"}, kunci: "B"},
+  {no: 39, kategori: "Substitusi Kode", soal: "Lihat kodenya! Balon itu angka berapa?", gambar: "1️⃣🎈   2️⃣🍓   3️⃣🍇 | 🎈➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "A"},
+  {no: 40, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🟡🟣🟡🟣🟡🟣❓", pilihan: {A: "🟡", B: "🔵", C: "🟣"}, kunci: "A"},
+  {no: 41, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kura-kura jadi apa?", gambar: "🐢➡️🟣   🚗➡️❤️ | 🐢➡️❓", pilihan: {A: "🔺", B: "❤️", C: "🟣"}, kunci: "C"},
+  {no: 42, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk hati. Mana hati merah?", gambar: "🍎 ➕ 🤍 ➡️ ❓", pilihan: {A: "❤️", B: "💙", C: "🔴"}, kunci: "A"},
+  {no: 43, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa ikan?", gambar: "🐟 🐟 🐟 🐟 🐟", pilihan: {A: "6", B: "3", C: "5"}, kunci: "C"},
+  {no: 44, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🦆   2️⃣🍦   3️⃣🐟 | 2️⃣➡️❓", pilihan: {A: "🦆", B: "🐟", C: "🍦"}, kunci: "C"},
+  {no: 45, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍎🍓🍎🍓🍎🍓❓", pilihan: {A: "🍌", B: "🍎", C: "🍓"}, kunci: "B"},
+  {no: 46, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Es krim jadi apa?", gambar: "🌸➡️🟩   🍦➡️🟣 | 🍦➡️❓", pilihan: {A: "🟣", B: "🟩", C: "🔺"}, kunci: "A"},
+  {no: 47, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk hati. Mana hati oranye?", gambar: "🍊 ➕ 🤍 ➡️ ❓", pilihan: {A: "💚", B: "🧡", C: "🟧"}, kunci: "B"},
+  {no: 48, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa bunga?", gambar: "🌸 🌸 🌸", pilihan: {A: "1", B: "3", C: "4"}, kunci: "B"},
+  {no: 49, kategori: "Substitusi Kode", soal: "Lihat kodenya! Kupu-kupu itu angka berapa?", gambar: "1️⃣🐱   2️⃣🐘   3️⃣🦋 | 🦋➡️❓", pilihan: {A: "3️⃣", B: "2️⃣", C: "1️⃣"}, kunci: "A"},
+  {no: 50, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "❤️☀️❤️☀️❤️❓", pilihan: {A: "❤️", B: "☀️", C: "⭐"}, kunci: "B"},
+  {no: 51, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ayam jadi apa?", gambar: "🐔➡️🔺   🚗➡️🔵 | 🐔➡️❓", pilihan: {A: "🔵", B: "☀️", C: "🔺"}, kunci: "C"},
+  {no: 52, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk kotak. Mana kotak oranye?", gambar: "🍊 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟧", B: "🟪", C: "🧡"}, kunci: "A"},
+  {no: 53, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kucing?", gambar: "🐱 🐱 🐱 🐱", pilihan: {A: "4", B: "3", C: "5"}, kunci: "A"},
+  {no: 54, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka tiga itu gambar apa?", gambar: "1️⃣🍊   2️⃣🐔   3️⃣🐶 | 3️⃣➡️❓", pilihan: {A: "🍊", B: "🐶", C: "🐔"}, kunci: "B"},
+  {no: 55, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🚗🚗🌸🚗🚗❓", pilihan: {A: "⚽", B: "🌸", C: "🚗"}, kunci: "B"},
+  {no: 56, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Bola jadi apa?", gambar: "🐢➡️🟣   ⚽➡️🔵 | ⚽➡️❓", pilihan: {A: "🔵", B: "🟣", C: "❤️"}, kunci: "A"},
+  {no: 57, kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk lingkaran. Mana lingkaran ungu?", gambar: "🍇 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟣", B: "🟪", C: "🟠"}, kunci: "A"},
+  {no: 58, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa ayam?", gambar: "🐔 🐔 🐔 🐔 🐔", pilihan: {A: "3", B: "5", C: "4"}, kunci: "B"},
+  {no: 59, kategori: "Substitusi Kode", soal: "Lihat kodenya! Bunga itu angka berapa?", gambar: "1️⃣🐢   2️⃣🌸   3️⃣🚗 | 🌸➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "B"},
+  {no: 60, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽⚽🎈⚽⚽🎈❓", pilihan: {A: "🎈", B: "⚽", C: "🚗"}, kunci: "B"},
+  {no: 61, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "⚽➡️☀️   🎈➡️🟩   🌸➡️🌙 | 🎈➡️❓", pilihan: {A: "🟩", B: "🌙", C: "☀️"}, kunci: "A"},
+  {no: 62, kategori: "Enkoding Kombinasi", soal: "Warna hijau, bentuk kotak. Mana kotak hijau?", gambar: "🐸 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟢", B: "🟨", C: "🟩"}, kunci: "C"},
+  {no: 63, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa es krim?", gambar: "🍦 🍦", pilihan: {A: "1", B: "2", C: "4"}, kunci: "B"},
+  {no: 64, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🎈   2️⃣🍎   3️⃣🐱 | 2️⃣➡️❓", pilihan: {A: "🎈", B: "🍎", C: "🐱"}, kunci: "B"},
+  {no: 65, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🔴🔴🟡🔴🔴❓", pilihan: {A: "🔴", B: "🟡", C: "🟣"}, kunci: "B"},
+  {no: 66, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Balon jadi apa?", gambar: "🍓➡️🟩   ⚽➡️🔺   🎈➡️❤️ | 🎈➡️❓", pilihan: {A: "🔺", B: "❤️", C: "🟩"}, kunci: "B"},
+  {no: 67, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk kotak. Mana kotak merah?", gambar: "🍎 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟥", B: "🔴", C: "🟪"}, kunci: "A"},
+  {no: 68, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa jeruk?", gambar: "🍊 🍊 🍊 🍊 🍊", pilihan: {A: "4", B: "5", C: "6"}, kunci: "B"},
+  {no: 69, kategori: "Substitusi Kode", soal: "Lihat kodenya! Stroberi itu angka berapa?", gambar: "1️⃣🐱   2️⃣🍎   3️⃣🍓 | 🍓➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "B"},
+  {no: 70, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🐰🐰🐶🐰🐰🐶❓", pilihan: {A: "🐰", B: "🐱", C: "🐶"}, kunci: "A"},
+  {no: 71, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Ikan jadi apa?", gambar: "🐟➡️❤️   🌸➡️🟣   🐸➡️🌙 | 🐟➡️❓", pilihan: {A: "🌙", B: "❤️", C: "🟣"}, kunci: "B"},
+  {no: 72, kategori: "Enkoding Kombinasi", soal: "Warna kuning, bentuk hati. Mana hati kuning?", gambar: "🍌 ➕ 🤍 ➡️ ❓", pilihan: {A: "🟨", B: "💛", C: "🧡"}, kunci: "B"},
+  {no: 73, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa katak?", gambar: "🐸 🐸 🐸 🐸 🐸", pilihan: {A: "6", B: "3", C: "5"}, kunci: "C"},
+  {no: 74, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🐸   2️⃣🍇   3️⃣🐢 | 2️⃣➡️❓", pilihan: {A: "🐸", B: "🐢", C: "🍇"}, kunci: "C"},
+  {no: 75, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍇🍎🍎🍇🍎❓", pilihan: {A: "🍎", B: "🍓", C: "🍇"}, kunci: "A"},
+  {no: 76, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Anggur jadi apa?", gambar: "🍇➡️❤️   🍎➡️🟩   ⚽➡️🟣 | 🍇➡️❓", pilihan: {A: "🟩", B: "❤️", C: "🟣"}, kunci: "B"},
+  {no: 77, kategori: "Enkoding Kombinasi", soal: "Warna ungu, bentuk hati. Mana hati ungu?", gambar: "🍇 ➕ 🤍 ➡️ ❓", pilihan: {A: "💚", B: "🟣", C: "💜"}, kunci: "C"},
+  {no: 78, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa anjing?", gambar: "🐶", pilihan: {A: "1", B: "2", C: "3"}, kunci: "A"},
+  {no: 79, kategori: "Substitusi Kode", soal: "Lihat kodenya! Kura-kura itu angka berapa?", gambar: "1️⃣🐢   2️⃣🐰   3️⃣🍊 | 🐢➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "A"},
+  {no: 80, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🍓🍎🍎🍓🍎🍎❓", pilihan: {A: "🍇", B: "🍓", C: "🍎"}, kunci: "B"},
+  {no: 81, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Katak jadi apa?", gambar: "🍦➡️🔵   🐟➡️⭐   🐸➡️🟣 | 🐸➡️❓", pilihan: {A: "⭐", B: "🟣", C: "🔵"}, kunci: "B"},
+  {no: 82, kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk lingkaran. Mana lingkaran biru?", gambar: "🐳 ➕ ⚪ ➡️ ❓", pilihan: {A: "🔵", B: "🟦", C: "🔴"}, kunci: "A"},
+  {no: 83, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa balon?", gambar: "🎈 🎈", pilihan: {A: "1", B: "4", C: "2"}, kunci: "C"},
+  {no: 84, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka dua itu gambar apa?", gambar: "1️⃣🍓   2️⃣🍇   3️⃣🐔 | 2️⃣➡️❓", pilihan: {A: "🍇", B: "🍓", C: "🐔"}, kunci: "A"},
+  {no: 85, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🚗⚽⚽🚗⚽⚽❓", pilihan: {A: "⚽", B: "🚗", C: "🎈"}, kunci: "B"},
+  {no: 86, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kelinci jadi apa?", gambar: "🍦➡️🔵   🐰➡️🟩   🌸➡️🌙 | 🐰➡️❓", pilihan: {A: "🌙", B: "🔵", C: "🟩"}, kunci: "C"},
+  {no: 87, kategori: "Enkoding Kombinasi", soal: "Warna biru, bentuk kotak. Mana kotak biru?", gambar: "🐳 ➕ ⬜ ➡️ ❓", pilihan: {A: "🟦", B: "🟧", C: "🔵"}, kunci: "A"},
+  {no: 88, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa mobil?", gambar: "🚗 🚗 🚗 🚗", pilihan: {A: "4", B: "5", C: "3"}, kunci: "A"},
+  {no: 89, kategori: "Substitusi Kode", soal: "Lihat kodenya! Katak itu angka berapa?", gambar: "1️⃣🍓   2️⃣🐸   3️⃣🌸 | 🐸➡️❓", pilihan: {A: "1️⃣", B: "3️⃣", C: "2️⃣"}, kunci: "C"},
+  {no: 90, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🎈⚽🌸🎈⚽🌸❓", pilihan: {A: "⚽", B: "🌸", C: "🎈"}, kunci: "C"},
+  {no: 91, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Kucing jadi apa?", gambar: "🐱➡️☀️   🍊➡️🔺   🐘➡️❤️ | 🐱➡️❓", pilihan: {A: "❤️", B: "☀️", C: "🔺"}, kunci: "B"},
+  {no: 92, kategori: "Enkoding Kombinasi", soal: "Warna merah, bentuk lingkaran. Mana lingkaran merah?", gambar: "🍎 ➕ ⚪ ➡️ ❓", pilihan: {A: "🟡", B: "🔴", C: "🟥"}, kunci: "B"},
+  {no: 93, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa anggur?", gambar: "🍇", pilihan: {A: "2", B: "1", C: "3"}, kunci: "B"},
+  {no: 94, kategori: "Substitusi Kode", soal: "Lihat kodenya! Angka satu itu gambar apa?", gambar: "1️⃣🐸   2️⃣⚽   3️⃣🐢 | 1️⃣➡️❓", pilihan: {A: "⚽", B: "🐢", C: "🐸"}, kunci: "C"},
+  {no: 95, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "⚽🌸🎈⚽🌸❓", pilihan: {A: "🌸", B: "⚽", C: "🎈"}, kunci: "C"},
+  {no: 96, kategori: "Enkoding Substitusi", soal: "Lihat kuncinya! Stroberi jadi apa?", gambar: "🍓➡️⭐   🐔➡️☀️   🍇➡️🔵 | 🍓➡️❓", pilihan: {A: "🔵", B: "☀️", C: "⭐"}, kunci: "C"},
+  {no: 97, kategori: "Enkoding Kombinasi", soal: "Warna oranye, bentuk lingkaran. Mana lingkaran oranye?", gambar: "🍊 ➕ ⚪ ➡️ ❓", pilihan: {A: "🧡", B: "🟡", C: "🟠"}, kunci: "C"},
+  {no: 98, kategori: "Enumerasi Piktografik", soal: "Ayo hitung! Ada berapa kupu-kupu?", gambar: "🦋 🦋", pilihan: {A: "3", B: "1", C: "2"}, kunci: "C"},
+  {no: 99, kategori: "Substitusi Kode", soal: "Lihat kodenya! Ikan itu angka berapa?", gambar: "1️⃣🌸   2️⃣🐘   3️⃣🐟 | 🐟➡️❓", pilihan: {A: "1️⃣", B: "2️⃣", C: "3️⃣"}, kunci: "C"},
+  {no: 100, kategori: "Reproduksi Pola Sekuensial", soal: "Lihat polanya! Apa gambar selanjutnya?", gambar: "🌙❤️⭐🌙❤️⭐❓", pilihan: {A: "🌙", B: "❤️", C: "⭐"}, kunci: "A"},
+];
+// </SOAL_BAWAAN>
+
+// ---------------------------------------------------------------------
+// 2. KONFIGURASI
+// ---------------------------------------------------------------------
+const MP_VERSION = '1.0.1';
+const MP_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}`;
+const HAND_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const INDEX_FINGER_TIP = 8;
+const DWELL_TIME = 1.0;                                    // detik menahan jari untuk memilih
+const FALL_SECONDS = { pelan: 16, sedang: 11, cepat: 7 };  // waktu jatuh dari atas ke bawah
+const HAND_GRACE_MS = 250;                                 // toleransi tangan hilang sesaat
+const LANE_COLORS = ['#ff7eb6', '#4cc9f0', '#ffb020'];
+const KATEGORI_IKON = {
+  'Enkoding Substitusi': '🔣',
+  'Enkoding Kombinasi': '🎨',
+  'Enumerasi Piktografik': '🔢',
+  'Substitusi Kode': '🔐',
+  'Reproduksi Pola Sekuensial': '🔁',
+};
+const PUJIAN = ['Hebat!', 'Pintar sekali!', 'Hore, benar!', 'Wah, jago!', 'Keren!', 'Mantap!'];
+const SEMANGAT = ['Hampir! Ini jawabannya, ya.', 'Tidak apa-apa, ini jawabannya ya!', 'Ayo, coba lagi di soal berikutnya!'];
+const FONT_STACK = 'Fredoka, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+
+// ---------------------------------------------------------------------
+// 3. STATE
+// ---------------------------------------------------------------------
+const $ = s => document.querySelector(s);
+const video = $('#cam');
+const canvas = $('#game');
+const ctx = canvas.getContext('2d');
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+let bank = store.get('tj_bank', null) || SOAL_BAWAAN;
+const settings = Object.assign(
+  { jumlah: '10', kecepatan: 'pelan', acak: true, suara: true, kategori: null },
+  store.get('tj_settings', {})
+);
+
+let state = 'menu';            // menu | loading | playing | feedback | result
+let session = [], qIndex = 0, history = [], score = 0;
+let boxes = [], feedback = null, particles = [];
+let W = 0, H = 0, DPR = 1;
+const L = {};                  // layout cache
+let qLayout = null;            // layout teks soal aktif
+
+let handLandmarker = null, mpPromise = null, HAND_CONNECTIONS = [];
+let cameraOn = false, lastVideoTime = -1;
+const hand = { visible: false, x: 0, y: 0, lastSeen: 0, points: null };
+const pointer = { x: 0, y: 0, active: false };
+const cursor = { x: 0, y: 0, visible: false, source: null };
+let lastFrame = performance.now(), noHandSince = 0, prevHovered = null;
+
+// ---------------------------------------------------------------------
+// 4. UTIL
+// ---------------------------------------------------------------------
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const font = (size, weight = 600) => `${weight} ${Math.round(size)}px ${FONT_STACK}`;
+const ikon = kat => KATEGORI_IKON[kat] || '❓';
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+let toastTimer;
+function toast(msg, ms = 3200) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// Bungkus teks ke beberapa baris; null jika tidak muat
+function wrapLines(text, maxW, maxLines) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const lines = []; let cur = '';
+  for (const w of words) {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width <= maxW) cur = test;
+    else {
+      if (cur) lines.push(cur);
+      if (ctx.measureText(w).width > maxW) return null;
+      cur = w;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines.length <= maxLines ? lines : null;
+}
+// Cari ukuran font terbesar yang muat di kotak maxW x maxH
+function fitText(text, maxW, maxH, maxFont, minFont, maxLines = 2, weight = 600) {
+  text = String(text ?? '');
+  for (let f = Math.floor(maxFont); f >= minFont; f -= 2) {
+    ctx.font = font(f, weight);
+    const lines = wrapLines(text, maxW, maxLines);
+    if (lines && lines.length * f * 1.15 <= maxH) return { size: f, lines, weight };
+  }
+  return { size: minFont, lines: [text], weight };   // fillText(maxWidth) akan memadatkan
+}
+function drawLines(fit, x, y, maxW, color, stroke) {
+  ctx.font = font(fit.size, fit.weight);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lh = fit.size * 1.15;
+  const top = y - (fit.lines.length - 1) * lh / 2;
+  fit.lines.forEach((ln, i) => {
+    if (stroke) { ctx.lineWidth = stroke.width; ctx.strokeStyle = stroke.color; ctx.lineJoin = 'round'; ctx.strokeText(ln, x, top + i * lh, maxW); }
+    ctx.fillStyle = color; ctx.fillText(ln, x, top + i * lh, maxW);
+  });
+}
+
+// ---------------------------------------------------------------------
+// 5. SUARA (Web Speech API + efek WebAudio, tanpa file audio)
+// ---------------------------------------------------------------------
+let actx = null, idVoice = null;
+function unlockAudio() {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch {}
+}
+function tone(freq, dur, { type = 'sine', vol = 0.15, at = 0, slide = 0 } = {}) {
+  if (!actx || !settings.suara) return;
+  const t0 = actx.currentTime + at;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+const sfx = {
+  hover: () => tone(620, 0.07, { vol: 0.07 }),
+  correct: () => { tone(660, 0.14); tone(880, 0.14, { at: 0.11 }); tone(1320, 0.32, { at: 0.22 }); },
+  wrong: () => tone(340, 0.35, { type: 'triangle', slide: 0.65, vol: 0.12 }),
+  finish: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, { at: i * 0.13 })),
+};
+function pickVoice() {
+  const vs = speechSynthesis.getVoices();
+  idVoice = vs.find(v => /^id[-_]ID/i.test(v.lang)) || vs.find(v => /^id/i.test(v.lang)) || null;
+}
+if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(text) {
+  if (!settings.suara || !text || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'id-ID'; if (idVoice) u.voice = idVoice;
+    u.rate = 0.92; u.pitch = 1.15;
+    setTimeout(() => speechSynthesis.speak(u), 60);   // jeda kecil: cancel→speak di Chrome kadang terlewat
+  } catch {}
+}
+
+// ---------------------------------------------------------------------
+// 6. KAMERA + MEDIAPIPE HAND LANDMARKER
+// ---------------------------------------------------------------------
+async function loadMediaPipe() {
+  // Import ES module MediaPipe Tasks Vision dari CDN jsDelivr (versi dipatok agar JS & WASM cocok)
+  const { FilesetResolver, HandLandmarker } = await import(`${MP_BASE}/vision_bundle.mjs`);
+  HAND_CONNECTIONS = HandLandmarker.HAND_CONNECTIONS || [];
+  const fileset = await FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+  const options = delegate => ({
+    baseOptions: { modelAssetPath: HAND_MODEL, delegate },
+    runningMode: 'VIDEO',
+    numHands: 1,
+    minHandDetectionConfidence: 0.5,
+    minHandPresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+  });
+  try { handLandmarker = await HandLandmarker.createFromOptions(fileset, options('GPU')); }
+  catch (e) { console.warn('GPU tidak tersedia, pakai CPU', e); handLandmarker = await HandLandmarker.createFromOptions(fileset, options('CPU')); }
+  return handLandmarker;
+}
+function ensureMediaPipe() {
+  if (!mpPromise) mpPromise = loadMediaPipe().catch(err => { mpPromise = null; throw err; });
+  return mpPromise;
+}
+
+async function startCamera() {
+  if (cameraOn) return;
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('Browser tidak mendukung kamera');
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
+  });
+  video.srcObject = stream;
+  await new Promise(res => { if (video.readyState >= 1) res(); else video.onloadedmetadata = () => res(); });
+  await video.play();
+  cameraOn = true;
+}
+
+// Koordinat ternormalisasi MediaPipe -> piksel layar (memperhitungkan object-fit:cover + cermin)
+function toScreen(p) {
+  const vw = video.videoWidth || W, vh = video.videoHeight || H;
+  const s = Math.max(W / vw, H / vh);
+  const dw = vw * s, dh = vh * s;
+  const ox = (W - dw) / 2, oy = (H - dh) / 2;
+  return { x: W - (p.x * dw + ox), y: p.y * dh + oy };
+}
+
+function detectHand(now) {
+  if (!handLandmarker || !cameraOn || video.readyState < 2) return;
+  if (video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+  let res;
+  try { res = handLandmarker.detectForVideo(video, now); } catch (e) { console.warn(e); return; }
+  if (res?.landmarks?.length) {
+    hand.points = res.landmarks[0].map(toScreen);
+    const tip = hand.points[INDEX_FINGER_TIP];
+    hand.x = tip.x; hand.y = tip.y; hand.visible = true; hand.lastSeen = now;
+  } else {
+    hand.visible = false; hand.points = null;
+  }
+}
+
+function updateCursor(now, dt) {
+  let tx, ty, src = null;
+  if (hand.visible || (hand.lastSeen && now - hand.lastSeen < HAND_GRACE_MS)) { tx = hand.x; ty = hand.y; src = 'hand'; }
+  else if (pointer.active) { tx = pointer.x; ty = pointer.y; src = 'pointer'; }
+  if (!src) { cursor.visible = false; return; }
+  if (!cursor.visible || cursor.source !== src || src === 'pointer') { cursor.x = tx; cursor.y = ty; }
+  else { const k = 1 - Math.exp(-dt * 22); cursor.x += (tx - cursor.x) * k; cursor.y += (ty - cursor.y) * k; }  // penghalus getaran
+  cursor.visible = true; cursor.source = src;
+}
+
+// Mouse / sentuh sebagai cadangan (dan untuk uji coba tanpa kamera)
+window.addEventListener('pointermove', e => { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; });
+window.addEventListener('pointerdown', e => { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; });
+window.addEventListener('pointerup', e => { if (e.pointerType === 'touch') pointer.active = false; });
+document.addEventListener('pointerleave', () => { pointer.active = false; });
+document.documentElement.addEventListener('mouseleave', () => { pointer.active = false; });
+
+// ---------------------------------------------------------------------
+// 7. LAYOUT
+// ---------------------------------------------------------------------
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const playW = Math.min(W, 1100);
+  L.boxW = clamp(Math.min(playW * 0.27, H * 0.3), 92, 230);
+  L.boxH = L.boxW * 0.74;
+  L.canopy = L.boxW * 0.5;                       // tinggi parasut di atas kotak
+  L.laneX = [0, 1, 2].map(i => W / 2 + (i - 1) * playW / 3);
+  L.spawnY = -L.boxH - L.canopy - 10;            // mulai dari atas layar
+  L.fallSpeed = (H - L.spawnY) / FALL_SECONDS[settings.kecepatan];
+  if (session[qIndex] && (state === 'playing' || state === 'feedback')) layoutQuestion(session[qIndex]);
+}
+window.addEventListener('resize', resize);
+
+function layoutQuestion(q) {
+  const panelW = Math.min(W - 24, 920);
+  const pad = clamp(W * 0.02, 10, 18);
+  const innerW = panelW - pad * 2;
+  const labelH = 26;
+  const maxPanelH = clamp(H * 0.36, 150, 330);
+  const soalFit = fitText(q.soal || '', innerW, clamp(H * 0.12, 44, 96), clamp(W * 0.045, 22, 40), 14, 2, 700);
+  const soalH = soalFit.lines.length * soalFit.size * 1.15;
+  const gLines = String(q.gambar || '').split('|').map(s => s.trim()).filter(Boolean);
+  let gSize = 0;
+  if (gLines.length) {
+    const room = maxPanelH - pad * 2 - labelH - soalH - 8;
+    gSize = Math.min(clamp(W * 0.075, 30, 68), room / (gLines.length * 1.25));
+    ctx.font = font(gSize, 500);
+    for (const ln of gLines) { const w = ctx.measureText(ln).width; if (w > innerW) gSize = Math.min(gSize, gSize * innerW / w); }
+    gSize = Math.max(16, gSize);
+  }
+  const gH = gLines.length ? gLines.length * gSize * 1.25 + 8 : 0;
+  const panelH = pad + labelH + soalH + gH + pad;
+  qLayout = { panelX: (W - panelW) / 2, panelY: 10, panelW, panelH, pad, labelH, innerW, soalFit, soalH, gLines, gSize };
+  L.panelBottom = qLayout.panelY + panelH;
+}
+
+// ---------------------------------------------------------------------
+// 8. ALUR PERMAINAN
+// ---------------------------------------------------------------------
+function categories() { return [...new Set(bank.map(q => q.kategori || 'Umum'))]; }
+
+function buildSession() {
+  const cats = settings.kategori;
+  let pool = bank.filter(q => cats.includes(q.kategori || 'Umum'));
+  if (settings.acak) pool = shuffle([...pool]);
+  const n = settings.jumlah === 'semua' ? pool.length : Math.min(Number(settings.jumlah), pool.length);
+  return pool.slice(0, n);
+}
+
+async function startGame(useCamera) {
+  unlockAudio();
+  session = buildSession();
+  if (!session.length) { toast('Pilih minimal satu jenis permainan dulu, ya! 🙂'); return; }
+  history = []; score = 0; qIndex = 0; particles = [];
+  $('#menu').hidden = true; $('#result').hidden = true;
+
+  if (useCamera) {
+    state = 'loading'; $('#loading').hidden = false;
+    $('#loadingText').textContent = 'Menyiapkan kamera…';
+    try { await startCamera(); }
+    catch (e) { console.warn(e); toast('Kamera tidak bisa dibuka 😢\nMain pakai mouse / sentuh dulu, ya.', 4500); }
+    if (cameraOn) {
+      $('#loadingText').textContent = 'Menyiapkan pendeteksi tangan… ✋';
+      try { await ensureMediaPipe(); }
+      catch (e) { console.warn(e); toast('Pendeteksi tangan gagal dimuat (cek internet).\nMain pakai mouse / sentuh dulu, ya.', 4500); }
+    }
+    $('#loading').hidden = true;
+  }
+  try { await document.fonts.load(font(32, 700)); } catch {}
+  resize();
+  $('#hud').hidden = false;
+  noHandSince = performance.now();
+  loadQuestion(0);
+}
+
+function loadQuestion(i) {
+  qIndex = i;
+  const q = session[i];
+  layoutQuestion(q);
+  boxes = ['A', 'B', 'C'].map((key, lane) => ({
+    key, lane, text: q.pilihan[key],
+    y: L.spawnY - Math.random() * L.boxH * 0.9,
+    cx: L.laneX[lane], dwell: 0, hover: false, hoverAnim: 0,
+    phase: Math.random() * Math.PI * 2, pop: 0, shake: 0, fit: null, fitW: 0,
+  }));
+  feedback = null; prevHovered = null;
+  state = 'playing';
+  updateHud();
+  say(q.soal);
+}
+
+function updateHud() {
+  $('#hudProgress').textContent = `Soal ${Math.min(qIndex + 1, session.length)}/${session.length}`;
+  $('#hudScore').textContent = `⭐ ${score}`;
+}
+
+function hitTest(b) {
+  if (b.y + L.boxH / 2 < L.panelBottom) return false;            // masih di balik papan soal
+  const pad = 14;
+  return cursor.x >= b.cx - L.boxW / 2 - pad && cursor.x <= b.cx + L.boxW / 2 + pad &&
+         cursor.y >= b.y - L.canopy * 0.5 && cursor.y <= b.y + L.boxH + pad;
+}
+
+function updatePlaying(dt, now) {
+  let hovered = null;
+  if (cursor.visible) hovered = boxes.find(hitTest) || null;
+  if (hovered && hovered !== prevHovered) sfx.hover();
+  prevHovered = hovered;
+
+  for (const b of boxes) {
+    b.hover = b === hovered;
+    b.hoverAnim += ((b.hover ? 1 : 0) - b.hoverAnim) * Math.min(1, dt * 12);
+    if (b.hover) {
+      b.dwell += dt;                                   // kotak berhenti jatuh saat ditunjuk
+      if (b.dwell >= DWELL_TIME) { lockAnswer(b); return; }
+    } else {
+      b.dwell = Math.max(0, b.dwell - dt * 2.5);
+      b.y += L.fallSpeed * dt;
+      if (b.y > H + 10) { b.y = L.spawnY - Math.random() * 40; b.dwell = 0; }   // muncul lagi dari atas
+    }
+  }
+  const handActive = hand.visible || cursor.source === 'pointer';
+  if (handActive) noHandSince = now;
+}
+
+function lockAnswer(b) {
+  const q = session[qIndex];
+  const benar = b.key === q.kunci;
+  history.push({
+    no: qIndex + 1, kategori: q.kategori || 'Umum', soal: q.soal, gambar: q.gambar,
+    dipilih: b.key, dipilihTeks: b.text, kunci: q.kunci, kunciTeks: q.pilihan[q.kunci], benar,
+  });
+  if (benar) score++;
+  b.dwell = DWELL_TIME; b.pop = 1;
+  const correctBox = boxes.find(x => x.key === q.kunci);
+  feedback = { benar, chosen: b, correct: correctBox, t: 0, dur: benar ? 1.9 : 2.6, text: benar ? pick(PUJIAN) : 'Hampir! 💪' };
+  state = 'feedback';
+  if (benar) { sfx.correct(); burst(b.cx, b.y + L.boxH / 2, 34); say(feedback.text); }
+  else { sfx.wrong(); b.shake = 1; say(pick(SEMANGAT)); }
+  updateHud();
+}
+
+function updateFeedback(dt) {
+  feedback.t += dt;
+  for (const b of boxes) { b.pop = Math.max(0, b.pop - dt * 2.5); b.shake = Math.max(0, b.shake - dt * 1.6); }
+  if (feedback.t >= feedback.dur) {
+    if (qIndex + 1 < session.length) loadQuestion(qIndex + 1);
+    else endGame();
+  }
+}
+
+function endGame() {
+  state = 'result';
+  boxes = []; particles = []; feedback = null;
+  ctx.clearRect(0, 0, W, H);                         // bersihkan canvas
+  $('#hud').hidden = true;
+  renderResult();
+  $('#result').hidden = false;
+  sfx.finish();
+  const total = history.length;
+  say(total ? `Selesai! Kamu benar ${score} dari ${total} soal. ${score === total ? 'Luar biasa!' : 'Hebat, terus berlatih ya!'}` : 'Selesai!');
+}
+
+// ---------------------------------------------------------------------
+// 9. PARTIKEL (konfeti bintang)
+// ---------------------------------------------------------------------
+function burst(x, y, n) {
+  const icons = ['⭐', '✨', '🌟', '💖', '🎉'];
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 180 + Math.random() * 360;
+    particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 220, life: 1.3 + Math.random() * 0.6, age: 0,
+      icon: Math.random() < 0.55 ? pick(icons) : null, color: pick(['#ff6fae', '#ffd23f', '#4cc9f0', '#8b5cf6', '#22c55e']),
+      size: 16 + Math.random() * 18, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8 });
+  }
+}
+function updateParticles(dt) {
+  for (const p of particles) { p.age += dt; p.vy += 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; }
+  particles = particles.filter(p => p.age < p.life);
+}
+
+// ---------------------------------------------------------------------
+// 10. RENDER CANVAS
+// ---------------------------------------------------------------------
+function draw(now) {
+  ctx.clearRect(0, 0, W, H);
+  if (state !== 'playing' && state !== 'feedback') return;
+  const t = now / 1000;
+  for (const b of boxes) drawBox(b, t);
+  drawPanel();
+  drawParticles();
+  if (feedback) drawFeedbackBanner(t);
+  drawHand();
+  drawCursor();
+  if (state === 'playing' && cameraOn && handLandmarker && now - noHandSince > 1800) drawHint(t);
+}
+
+function drawPanel() {
+  const P = qLayout, q = session[qIndex];
+  ctx.save();
+  ctx.shadowColor = 'rgba(59,42,90,.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
+  roundRect(P.panelX, P.panelY, P.panelW, P.panelH, 26);
+  ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = 5; ctx.strokeStyle = '#ffd23f'; ctx.stroke();
+
+  // label kategori
+  const label = `${ikon(q.kategori)} ${q.kategori || 'Umum'}`;
+  ctx.font = font(14, 600);
+  const lw = ctx.measureText(label).width + 22;
+  roundRect(P.panelX + P.pad, P.panelY + P.pad - 4, lw, 24, 12);
+  ctx.fillStyle = '#f3eefc'; ctx.fill();
+  ctx.fillStyle = '#6b5a8a'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, P.panelX + P.pad + 11, P.panelY + P.pad + 8);
+
+  // teks soal
+  const cx = W / 2;
+  let y = P.panelY + P.pad + P.labelH + P.soalH / 2;
+  drawLines(P.soalFit, cx, y, P.innerW, '#3b2a5a');
+  y += P.soalH / 2 + 8;
+
+  // baris gambar/emoji
+  if (P.gLines.length) {
+    ctx.font = font(P.gSize, 500); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#3b2a5a';
+    P.gLines.forEach((ln, i) => ctx.fillText(ln, cx, y + P.gSize * 1.25 * (i + 0.5), P.innerW));
+  }
+  ctx.restore();
+}
+
+function drawBox(b, t) {
+  const w = L.boxW, h = L.boxH, color = LANE_COLORS[b.lane];
+  const p = clamp(b.dwell / DWELL_TIME, 0, 1);
+  const fb = feedback;
+  let alpha = 1;
+  if (fb && b !== fb.chosen && b !== fb.correct) alpha = 0.3;
+
+  // posisi x bergoyang lembut, berhenti saat ditunjuk
+  const sway = Math.sin(t * 1.5 + b.phase) * 7 * (1 - b.hoverAnim) * (fb ? 0 : 1);
+  b.cx = L.laneX[b.lane] + sway + (b.shake ? Math.sin(t * 50) * 12 * b.shake : 0);
+  const cy = b.y + h / 2;
+  const scale = 1 + 0.08 * b.hoverAnim + 0.18 * Math.sin(b.pop * Math.PI);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(b.cx, cy);
+  ctx.scale(scale, scale);
+
+  // --- parasut ---
+  const top = -h / 2, canopyY = top - L.canopy * 0.42, R = w * 0.5;
+  ctx.strokeStyle = 'rgba(59,42,90,.5)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-R * 0.92, canopyY); ctx.lineTo(-w * 0.36, top + 4);
+  ctx.moveTo(R * 0.92, canopyY); ctx.lineTo(w * 0.36, top + 4);
+  ctx.moveTo(0, canopyY); ctx.lineTo(0, top + 2);
+  ctx.stroke();
+  ctx.save();
+  ctx.translate(0, canopyY); ctx.scale(1, 0.62);
+  const parts = 6;
+  for (let i = 0; i < parts; i++) {
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.arc(0, 0, R, Math.PI + i * Math.PI / parts, Math.PI + (i + 1) * Math.PI / parts);
+    ctx.closePath(); ctx.fillStyle = i % 2 ? '#ffffff' : color; ctx.fill();
+  }
+  ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(59,42,90,.35)';
+  ctx.beginPath(); ctx.arc(0, 0, R, Math.PI, 0); ctx.stroke();
+  ctx.restore();
+
+  // --- kotak ---
+  ctx.shadowColor = b.hover ? 'rgba(255,214,0,.9)' : 'rgba(59,42,90,.3)';
+  ctx.shadowBlur = b.hover ? 28 : 12; ctx.shadowOffsetY = b.hover ? 0 : 6;
+  roundRect(-w / 2, -h / 2, w, h, 22);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  if (b.hoverAnim > 0.05) { ctx.lineWidth = 6; ctx.strokeStyle = `rgba(255,230,0,${b.hoverAnim})`; ctx.stroke(); }
+  if (fb && b === fb.correct) { ctx.lineWidth = 8; ctx.strokeStyle = '#22c55e'; ctx.stroke(); }
+
+  // bagian dalam putih + isian "air" sebagai loading
+  const ix = -w / 2 + 8, iy = -h / 2 + 8, iw = w - 16, ih = h - 16;
+  roundRect(ix, iy, iw, ih, 15);
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  if (p > 0) {
+    ctx.save(); ctx.clip();
+    const fillH = ih * p, wave = Math.sin(t * 8) * 4;
+    ctx.fillStyle = 'rgba(134, 239, 172, .85)';
+    ctx.beginPath();
+    ctx.moveTo(ix, iy + ih - fillH + wave);
+    ctx.quadraticCurveTo(ix + iw / 2, iy + ih - fillH - wave * 2, ix + iw, iy + ih - fillH + wave);
+    ctx.lineTo(ix + iw, iy + ih); ctx.lineTo(ix, iy + ih); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // isi jawaban
+  if (!b.fit || b.fitW !== w) { b.fit = fitText(b.text, iw - 14, ih - 12, h * 0.5, 12, 2, 700); b.fitW = w; }
+  drawLines(b.fit, 0, 2, iw - 14, '#3b2a5a');
+
+  // lencana huruf A/B/C
+  const br = clamp(w * 0.11, 12, 20);
+  ctx.beginPath(); ctx.arc(-w / 2 + br * 0.6, -h / 2 + br * 0.6, br, 0, Math.PI * 2);
+  ctx.fillStyle = '#3b2a5a'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = font(br * 1.2, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(b.key, -w / 2 + br * 0.6, -h / 2 + br * 0.6 + 1);
+
+  // tanda benar / salah
+  if (fb && (b === fb.chosen || b === fb.correct)) {
+    const ok = b === fb.correct, mr = clamp(w * 0.15, 16, 28);
+    ctx.beginPath(); ctx.arc(w / 2 - mr * 0.4, -h / 2 + mr * 0.4, mr, 0, Math.PI * 2);
+    ctx.fillStyle = ok ? '#22c55e' : '#ef4444'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = font(mr * 1.2, 700);
+    ctx.fillText(ok ? '✔' : '✖', w / 2 - mr * 0.4, -h / 2 + mr * 0.4 + 1);
+  }
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const a = 1 - p.age / p.life;
+    ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+    if (p.icon) { ctx.font = font(p.size, 500); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.icon, 0, 0); }
+    else { ctx.fillStyle = p.color; ctx.fillRect(-p.size / 4, -p.size / 6, p.size / 2, p.size / 3); }
+    ctx.restore();
+  }
+}
+
+function drawFeedbackBanner(t) {
+  const k = Math.min(1, feedback.t / 0.35);
+  const s = (0.4 + 0.6 * k) * (1 + 0.04 * Math.sin(t * 8));
+  const y = clamp(L.panelBottom + (H - L.panelBottom) * 0.42, H * 0.35, H * 0.7);
+  ctx.save();
+  ctx.translate(W / 2, y); ctx.scale(s, s);
+  const txt = feedback.benar ? `⭐ ${feedback.text} ⭐` : feedback.text;
+  const size = clamp(W * 0.08, 34, 76);
+  ctx.font = font(size, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.lineWidth = size * 0.22; ctx.strokeStyle = '#ffffff'; ctx.strokeText(txt, 0, 0, W * 0.9);
+  ctx.fillStyle = feedback.benar ? '#16a34a' : '#f97316'; ctx.fillText(txt, 0, 0, W * 0.9);
+  ctx.restore();
+}
+
+function drawHand() {
+  if (!hand.points || !hand.visible) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (const c of HAND_CONNECTIONS) {
+    const a = hand.points[c.start ?? c[0]], b = hand.points[c.end ?? c[1]];
+    if (a && b) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+  }
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  for (const p of hand.points) { ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+
+function drawCursor() {
+  if (!cursor.visible || state !== 'playing') return;
+  const hovered = boxes.find(b => b.hover);
+  const p = hovered ? clamp(hovered.dwell / DWELL_TIME, 0, 1) : 0;
+  const { x, y } = cursor;
+  ctx.save();
+  // cincin progres 1 detik
+  ctx.lineWidth = 9; ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,.7)';
+  ctx.beginPath(); ctx.arc(x, y, 34, 0, Math.PI * 2); ctx.stroke();
+  if (p > 0) {
+    ctx.strokeStyle = '#22c55e';
+    ctx.beginPath(); ctx.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); ctx.stroke();
+  }
+  // titik ujung jari
+  ctx.shadowColor = 'rgba(255,111,174,.9)'; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff6fae'; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
+  ctx.font = font(16, 500); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('✨', x + 1, y + 1);
+  ctx.restore();
+}
+
+function drawHint(t) {
+  const txt = '✋ Angkat tanganmu ke depan kamera!';
+  const size = clamp(W * 0.035, 18, 30);
+  ctx.save();
+  ctx.font = font(size, 700);
+  const w = ctx.measureText(txt).width + 40, h = size * 2;
+  const x = W / 2, y = H - h - 60 + Math.sin(t * 4) * 4;
+  roundRect(x - w / 2, y, w, h, h / 2);
+  ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = '#ff6fae'; ctx.stroke();
+  ctx.fillStyle = '#3b2a5a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, x, y + h / 2, W - 40);
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------
+// 11. GAME LOOP
+// ---------------------------------------------------------------------
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  if (state === 'playing' || state === 'feedback') {
+    detectHand(now);
+    updateCursor(now, dt);
+    if (state === 'playing') updatePlaying(dt, now);
+    else updateFeedback(dt);
+    updateParticles(dt);
+  }
+  draw(now);
+  requestAnimationFrame(loop);
+}
+
+// ---------------------------------------------------------------------
+// 12. LAYAR HASIL
+// ---------------------------------------------------------------------
+function renderResult() {
+  const total = history.length;
+  const pct = total ? score / total : 0;
+  $('#scoreBig').textContent = `${score} / ${total}`;
+  const nStar = total === 0 ? 0 : pct >= 0.8 ? 3 : pct >= 0.5 ? 2 : 1;
+  $('#stars').innerHTML = [0, 1, 2].map(i => `<span class="${i < nStar ? '' : 'dim'}">⭐</span>`).join('');
+  $('#resultMsg').textContent = total === 0 ? 'Belum ada soal yang dijawab.'
+    : pct === 1 ? 'Sempurna! Kamu juara! 🎉' : pct >= 0.8 ? 'Hebat sekali! 👏' : pct >= 0.5 ? 'Bagus! Terus berlatih, ya! 💪' : 'Ayo main lagi, pasti makin pintar! 🌈';
+
+  const per = {};
+  for (const h of history) { per[h.kategori] ??= [0, 0]; per[h.kategori][1]++; if (h.benar) per[h.kategori][0]++; }
+  $('#catSum').innerHTML = Object.entries(per).map(([k, [b, n]]) => `<span>${ikon(k)} ${escapeHtml(k)}: ${b}/${n}</span>`).join('');
+
+  $('#resultBody').innerHTML = history.map(h => `
+    <tr>
+      <td class="no">${h.no}</td>
+      <td><div class="q">${escapeHtml(h.soal)}</div>${h.gambar ? `<div class="g">${escapeHtml(h.gambar).replace(/\|/g, '<br>')}</div>` : ''}</td>
+      <td class="ans">${h.dipilih}. ${escapeHtml(h.dipilihTeks)}</td>
+      <td class="ans">${h.kunci}. ${escapeHtml(h.kunciTeks)}</td>
+      <td>${h.benar ? '<span class="tag ok">✅ Benar</span>' : '<span class="tag no">❌ Salah</span>'}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center">—</td></tr>';
+}
+
+function exportRekap() {
+  if (!window.XLSX) { toast('Library Excel belum termuat. Cek koneksi internet.'); return; }
+  const rows = history.map(h => ({
+    'No': h.no, 'Kategori': h.kategori, 'Pertanyaan': h.soal, 'Gambar': h.gambar,
+    'Jawaban Terpilih': `${h.dipilih}. ${h.dipilihTeks}`, 'Kunci Jawaban': `${h.kunci}. ${h.kunciTeks}`,
+    'Hasil': h.benar ? 'Benar' : 'Salah',
+  }));
+  rows.push({}, { 'No': 'Skor', 'Kategori': `${score} / ${history.length}` });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Rekap');
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  XLSX.writeFile(wb, `rekap_tangkap_jawaban_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.xlsx`);
+}
+
+// ---------------------------------------------------------------------
+// 13. IMPORT SOAL (Excel .xlsx / .csv) — kolom: No, Kategori, Soal, Gambar, Pilihan_A, Pilihan_B, Pilihan_C, Kunci
+// ---------------------------------------------------------------------
+const HEADER_MAP = {
+  no: 'no', nomor: 'no',
+  kategori: 'kategori', jenis: 'kategori', category: 'kategori',
+  soal: 'soal', pertanyaan: 'soal', question: 'soal',
+  gambar: 'gambar', emoji: 'gambar', visual: 'gambar',
+  pilihana: 'A', jawabana: 'A', opsia: 'A', a: 'A',
+  pilihanb: 'B', jawabanb: 'B', opsib: 'B', b: 'B',
+  pilihanc: 'C', jawabanc: 'C', opsic: 'C', c: 'C',
+  kunci: 'kunci', kuncijawaban: 'kunci', jawabanbenar: 'kunci', answer: 'kunci',
+};
+const normHeader = h => String(h).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function rowsToQuestions(rows) {
+  const out = [], errors = [];
+  rows.forEach((row, i) => {
+    const r = {};
+    for (const [k, v] of Object.entries(row)) { const key = HEADER_MAP[normHeader(k)]; if (key) r[key] = String(v ?? '').trim(); }
+    const line = i + 2;
+    if (!r.soal && !r.gambar && !r.A && !r.B && !r.C) return;                        // baris kosong
+    if (!r.soal && !r.gambar) { errors.push(`Baris ${line}: Soal kosong`); return; }
+    if (!r.A || !r.B || !r.C) { errors.push(`Baris ${line}: Pilihan A, B, C wajib diisi`); return; }
+    let k = (r.kunci || '').toUpperCase();
+    if (!['A', 'B', 'C'].includes(k)) {
+      const m = ['A', 'B', 'C'].find(x => r[x] === r.kunci);
+      if (!m) { errors.push(`Baris ${line}: Kunci harus A, B, atau C`); return; }
+      k = m;
+    }
+    out.push({ no: 0, kategori: r.kategori || 'Umum', soal: r.soal || '', gambar: r.gambar || '', pilihan: { A: r.A, B: r.B, C: r.C }, kunci: k });
+  });
+  return { out, errors };
+}
+
+async function importFile(file) {
+  if (!window.XLSX) { toast('Library Excel belum termuat. Cek koneksi internet lalu coba lagi.'); return; }
+  try {
+    const isCsv = /\.csv$/i.test(file.name);
+    const wb = isCsv ? XLSX.read(await file.text(), { type: 'string' }) : XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'soal') || wb.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '', raw: false });
+    const { out, errors } = rowsToQuestions(rows);
+    if (!out.length) { toast(`Tidak ada soal valid di file ini 😕\n${errors.slice(0, 3).join('\n')}`, 6000); return; }
+    const mode = $('#importMode').value;
+    bank = (mode === 'ganti' ? out : [...bank, ...out]).map((q, i) => ({ ...q, no: i + 1 }));
+    store.set('tj_bank', bank);
+    settings.kategori = null;
+    renderMenu();
+    toast(`✅ ${out.length} soal berhasil diimport (${mode === 'ganti' ? 'mengganti' : 'ditambahkan'}).` +
+      (errors.length ? `\n⚠️ ${errors.length} baris dilewati: ${errors.slice(0, 2).join('; ')}` : ''), 6000);
+  } catch (e) {
+    console.error(e); toast('File tidak bisa dibaca. Pastikan memakai template Excel yang disediakan.', 5000);
+  }
+}
+
+// ---------------------------------------------------------------------
+// 14. MENU
+// ---------------------------------------------------------------------
+function saveSettings() { store.set('tj_settings', settings); }
+
+function renderMenu() {
+  const cats = categories();
+  if (!Array.isArray(settings.kategori)) settings.kategori = [...cats];
+  settings.kategori = settings.kategori.filter(c => cats.includes(c));
+  if (!settings.kategori.length) settings.kategori = [...cats];
+
+  const isDefault = bank === SOAL_BAWAAN;
+  $('#bankInfo').innerHTML = `📚 ${bank.length} soal ${isDefault ? 'bawaan' : 'aktif'}<small>${isDefault ? 'Import file Excel untuk menambah soal sendiri.' : 'Soal hasil import tersimpan di browser ini.'}</small>`;
+  $('#btnReset').hidden = isDefault;
+
+  $('#chipsKategori').innerHTML = cats.map(c => {
+    const n = bank.filter(q => (q.kategori || 'Umum') === c).length;
+    return `<button data-v="${escapeHtml(c)}" class="${settings.kategori.includes(c) ? 'on' : ''}">${ikon(c)} ${escapeHtml(c)} (${n})</button>`;
+  }).join('');
+  document.querySelectorAll('#segJumlah button').forEach(b => b.classList.toggle('on', b.dataset.v === String(settings.jumlah)));
+  document.querySelectorAll('#segSpeed button').forEach(b => b.classList.toggle('on', b.dataset.v === settings.kecepatan));
+  $('#tglAcak').classList.toggle('on', settings.acak);
+  $('#tglSuara').classList.toggle('on', settings.suara);
+  $('#tglAcak').textContent = settings.acak ? '🔀 Soal diacak' : '➡️ Soal berurutan';
+  $('#tglSuara').textContent = settings.suara ? '🔊 Suara & dibacakan' : '🔇 Tanpa suara';
+  saveSettings();
+}
+
+$('#segJumlah').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.jumlah = b.dataset.v; renderMenu(); });
+$('#segSpeed').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.kecepatan = b.dataset.v; renderMenu(); });
+$('#chipsKategori').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const c = b.dataset.v, set = new Set(settings.kategori);
+  set.has(c) ? set.delete(c) : set.add(c);
+  if (!set.size) { toast('Minimal satu jenis permainan harus dipilih 🙂'); return; }
+  settings.kategori = categories().filter(x => set.has(x)); renderMenu();
+});
+$('#tglAcak').addEventListener('click', () => { settings.acak = !settings.acak; renderMenu(); });
+$('#tglSuara').addEventListener('click', () => { settings.suara = !settings.suara; if (!settings.suara && 'speechSynthesis' in window) speechSynthesis.cancel(); renderMenu(); });
+$('#fileImport').addEventListener('change', e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ''; });
+$('#btnReset').addEventListener('click', () => {
+  if (!confirm('Hapus soal hasil import dan kembali ke 100 soal bawaan?')) return;
+  bank = SOAL_BAWAAN; store.del('tj_bank'); settings.kategori = null; renderMenu(); toast('↩️ Kembali ke soal bawaan.');
+});
+$('#btnStart').addEventListener('click', () => startGame(true));
+$('#btnMouse').addEventListener('click', () => startGame(false));
+$('#btnRepeat').addEventListener('click', () => { if (session[qIndex]) say(session[qIndex].soal); });
+$('#btnStop').addEventListener('click', () => { if (state === 'playing' || state === 'feedback') endGame(); });
+$('#btnAgain').addEventListener('click', () => startGame(cameraOn));
+$('#btnMenu').addEventListener('click', () => { state = 'menu'; $('#result').hidden = true; $('#menu').hidden = false; renderMenu(); });
+$('#btnExport').addEventListener('click', exportRekap);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && (state === 'playing' || state === 'feedback')) endGame();
+  if (e.key === ' ' && state === 'playing' && session[qIndex]) { e.preventDefault(); say(session[qIndex].soal); }
+});
+
+// ---------------------------------------------------------------------
+// 15. MULAI
+// ---------------------------------------------------------------------
+resize();
+renderMenu();
+ensureMediaPipe().catch(err => console.warn('MediaPipe akan dicoba lagi saat mulai main:', err));  // pra-muat di latar
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
